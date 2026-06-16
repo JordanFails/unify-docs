@@ -1,0 +1,125 @@
+---
+icon: GitCompare
+title: Cross Version
+description: Version safe materials, sounds, and more.
+---
+
+Unify bridges the gap between Minecraft versions so your plugin works
+on 1.8 through 1.21 without changes.
+
+## XSupport
+
+`XSupport` is the entry point for cross-version material resolution:
+
+```kotlin
+import me.jordanfails.unify.XSupport
+import me.jordanfails.unify.xseries.XMaterial
+
+// Resolves to the correct Material for the server version
+val material = XSupport.resolve(XMaterial.DIAMOND_SWORD)
+val item = ItemBuilder(material).name("&bSword").build()
+```
+
+## Version Checks
+
+```kotlin
+if (XSupport.isAvailable(XMaterial.NETHERITE_INGOT)) {
+    // Server is 1.16+ — netherite exists
+}
+
+if (XSupport.isLegacy()) {
+    // Server is 1.8–1.12
+}
+
+if (XSupport.isModern()) {
+    // Server is 1.13+
+}
+
+val version = XSupport.getServerVersion()  // e.g. "1.21.1"
+val major = XSupport.getMajorVersion()     // e.g. 21
+```
+
+## Material Mapping
+
+<Tabs items={['Legacy → Modern', 'Safe Resolution', 'Common Patterns']}>
+  <Tab value="Legacy → Modern">
+    | Legacy (1.8–1.12) | Modern (1.13+) |
+    |---------------------|------------------|
+    | `WOOL` (data: 1) | `ORANGE_WOOL` |
+    | `STONE` (data: 1) | `GRANITE` |
+    | `WOOD` (data: 0) | `OAK_PLANKS` |
+    | `LOG` (data: 0) | `OAK_LOG` |
+    | `SKULL_ITEM` (data: 3) | `PLAYER_HEAD` |
+
+    XMaterial handles this transparently:
+
+    ```kotlin
+    // Works on 1.8 and 1.21
+    val wool = XSupport.resolve(XMaterial.ORANGE_WOOL)
+    val head = XSupport.resolve(XMaterial.PLAYER_HEAD)
+    ```
+  </Tab>
+
+  <Tab value="Safe Resolution">
+    ```kotlin
+    // Returns null if the material doesn't exist on this version
+    val material = XSupport.resolve(XMaterial.NETHERITE_INGOT)
+
+    // With fallback
+    val mat = XSupport.resolve(XMaterial.NETHERITE_INGOT) ?: Material.IRON_INGOT
+
+    // Check before using
+    if (XSupport.isAvailable(XMaterial.AMETHYST_SHARD)) {
+        // Only runs on 1.17+
+    }
+    ```
+  </Tab>
+
+  <Tab value="Common Patterns">
+    ```kotlin
+    // Build item that works everywhere
+    val sword = ItemBuilder(XMaterial.DIAMOND_SWORD)
+        .name("&bSword")
+        .build()
+
+    // Conditional feature based on version
+    val reward = if (XSupport.isAvailable(XMaterial.NETHERITE_INGOT)) {
+        ItemBuilder(XMaterial.NETHERITE_INGOT).build()
+    } else {
+        ItemBuilder(XMaterial.DIAMOND).build()
+    }
+
+    // Version-specific logic
+    when {
+        XSupport.getMajorVersion() >= 21 -> {
+            // 1.21+ specific
+        }
+        XSupport.getMajorVersion() >= 16 -> {
+            // 1.16+ specific
+        }
+        else -> {
+            // fallback
+        }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Building for Both Variants
+
+Unify has two Maven artifacts:
+
+| Variant | Java | Server | Use When |
+|---------|------|--------|----------|
+| `unify-legacy` | 8+ | 1.8–1.16 | Supporting older servers |
+| `unify-modern` | 21+ | 1.17+ | Modern servers only |
+
+Both share the same API — you only change the dependency coordinate.
+
+```kotlin
+// build.gradle.kts (legacy)
+compileOnly("me.jordanfails:unify-legacy:1.0-SNAPSHOT")
+
+// build.gradle.kts (modern)
+compileOnly("me.jordanfails:unify-modern:1.0-SNAPSHOT")
+```

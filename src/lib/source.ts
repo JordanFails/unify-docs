@@ -1,13 +1,55 @@
+import { createElement } from 'react';
 import { loader } from 'fumadocs-core/source';
 import { docs } from 'collections/server';
-import { lucideIconsPlugin } from 'fumadocs-core/source/lucide-icons';
+import { customIconsPlugin } from './icon-plugin.tsx';
 import { docsRoute } from './shared';
 
-export const source = loader({
+const source = loader({
   source: docs.toFumadocsSource(),
   baseUrl: docsRoute,
-  plugins: [lucideIconsPlugin()],
+  plugins: [customIconsPlugin()],
 });
+
+// ── Dual-icon support: gray inactive + brand active for storage backends ──
+const dualIconMap = new Map<string, { inactive: string; active: string }>();
+for (const page of source.getPages()) {
+  const data = page.data as Record<string, unknown>;
+  if (data?.activeIcon && data?.icon) {
+    dualIconMap.set(page.url, {
+      inactive: data.icon as string,
+      active: data.activeIcon as string,
+    });
+  }
+}
+
+function walkTree(nodes: any[] | any) {
+  const arr = Array.isArray(nodes) ? nodes : [nodes];
+  for (const node of arr) {
+    if (!node) continue;
+    if (node.type === 'page' && dualIconMap.has(node.url)) {
+      const { inactive, active } = dualIconMap.get(node.url)!;
+      node.icon = createElement(
+        'span',
+        { className: 'relative block size-4 shrink-0' },
+        createElement('span', {
+          className:
+            'fd-sidebar-icon-inactive absolute inset-0 flex items-center justify-center',
+          dangerouslySetInnerHTML: { __html: inactive },
+        }),
+        createElement('span', {
+          className:
+            'fd-sidebar-icon-active absolute inset-0 flex items-center justify-center hidden',
+          dangerouslySetInnerHTML: { __html: active },
+        })
+      );
+    }
+    if (node.children && Array.isArray(node.children)) walkTree(node.children);
+  }
+}
+
+walkTree(source.pageTree);
+
+export { source };
 
 export function markdownPathToSlugs(segs: string[]) {
   if (segs.length === 0) return [];

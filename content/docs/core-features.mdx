@@ -1,0 +1,249 @@
+---
+icon: Zap
+title: Core Features
+description: CC, ItemBuilder, Config, Tasks, PlayerUtils — the everyday tools
+---
+
+Unify bundles the utilities you reach for in every plugin. Here's a tour
+of the most important ones.
+
+---
+
+## CC — Color Translation
+
+`CC` translates legacy color codes, MiniMessage tags, hex codes, and
+gradients into Adventure components or legacy strings.
+
+```kotlin
+import me.jordanfails.unify.CC
+
+// Legacy &-codes
+CC.translate("&aHello &bWorld")          // -> green + aqua text
+
+// Hex colors
+CC.translate("&#ff0000Red Text")
+
+// Gradients
+CC.translate("<gradient:red:blue>Gradient</gradient>")
+
+// MiniMessage
+CC.translate("<bold><rainbow>Fancy</rainbow></bold>")
+```
+
+CC works everywhere — console messages, item names, lore, chat.
+
+---
+
+## ItemBuilder — Fluid ItemStack Creation
+
+Build complex items with a clean, chainable API.
+
+```kotlin
+import me.jordanfails.unify.ItemBuilder
+import org.bukkit.Material
+
+val sword = ItemBuilder(Material.DIAMOND_SWORD)
+    .name("&b&lExcalibur")
+    .lore(
+        "&7A legendary blade",
+        "",
+        "&e⚔ +15 Attack Damage"
+    )
+    .enchant(Enchantment.DAMAGE_ALL, 5)
+    .enchant(Enchantment.FIRE_ASPECT, 2)
+    .unbreakable(true)
+    .glow(true)
+    .amount(1)
+    .build()
+```
+
+| Method              | Description                                 |
+| ------------------- | ------------------------------------------- |
+| `name(String)`      | Sets the display name (auto-colorized)      |
+| `lore(vararg)`      | Sets lore lines (auto-colorized)            |
+| `enchant(enchant, level)` | Adds an enchantment                  |
+| `unbreakable(Boolean)` | Sets the Unbreakable flag               |
+| `glow(Boolean)`     | Adds a fake enchantment glow                |
+| `amount(Int)`       | Stack size                                  |
+| `build()`           | Returns the finished `ItemStack`            |
+
+---
+
+## Config — YAML Wrapper
+
+A simple, type-safe wrapper around Bukkit's `FileConfiguration`.
+
+```kotlin
+import me.jordanfails.unify.Config
+
+class MyPlugin : JavaPlugin() {
+
+    lateinit var config: Config
+
+    override fun onEnable() {
+        config = Config(this, "config")  // loads config.yml from plugin folder
+
+        val prefix = config.getString("prefix")
+        val limit  = config.getInt("max-players")
+        val enabled = config.getBoolean("feature-x.enabled")
+    }
+}
+```
+
+### Enum-based config pattern
+
+For Voyage-style type-safe configs:
+
+```kotlin
+enum class MyConfig(val path: String, val defaultValue: Any) {
+    SOME_SETTING("some.path", "default value"),
+    MAX_PLAYERS("max-players", 10),
+    FEATURE_ENABLED("feature-x.enabled", true);
+
+    companion object {
+        lateinit var config: Config
+    }
+
+    fun getString(): String =
+        config.getValue(path, defaultValue).toString()
+
+    fun getInt(): Int =
+        (config.getValue(path, defaultValue) as Number).toInt()
+
+    fun getBoolean(): Boolean =
+        config.getValue(path, defaultValue) as Boolean
+}
+```
+
+Then in `onEnable`:
+
+```kotlin
+MyConfig.config = Config(this, "config")
+val max = MyConfig.MAX_PLAYERS.getInt()
+```
+
+---
+
+## Tasks — Scheduling Shortcuts
+
+Cuts through Bukkit scheduler boilerplate:
+
+```kotlin
+import me.jordanfails.unify.Tasks
+
+// Run on the next tick (main thread)
+Tasks.run(plugin) {
+    player.sendMessage("Task ran!")
+}
+
+// Run async
+Tasks.runAsync(plugin) {
+    // heavy computation here
+}
+
+// Run after a delay (20 ticks = 1 second)
+Tasks.runLater(plugin, 20L) {
+    player.sendMessage("One second later!")
+}
+
+// Run repeatedly (every 2 seconds)
+Tasks.runTimer(plugin, 0L, 40L) {
+    player.sendMessage("Every 2 seconds")
+}
+```
+
+All methods accept a suspend-friendly lambda and handle lifecycle
+cleanup automatically.
+
+---
+
+## PlayerUtils — Common Player Actions
+
+```kotlin
+import me.jordanfails.unify.PlayerUtils
+
+// Play a sound
+PlayerUtils.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 0.75F)
+
+// Send a title
+PlayerUtils.sendTitle(player, "&b&lWelcome!", "&7to the server", 10, 40, 10)
+
+// Send an action bar
+PlayerUtils.sendActionBar(player, "&a⚡ Boost Active!")
+
+// Reset player
+PlayerUtils.resetPlayer(player)  // clears inventory, resets health/food/effects
+```
+
+---
+
+## XSupport — Cross-Version Helpers
+
+Bridge between legacy Bukkit enums and modern Paper APIs:
+
+```kotlin
+import me.jordanfails.unify.XSupport
+import me.jordanfails.unify.xseries.XMaterial
+
+val material = XSupport.resolve(XMaterial.DIAMOND_SWORD)
+val itemStack = ItemBuilder(material).name("&bSword").build()
+```
+
+XSupport automatically picks the right server-version enum value so your
+plugin works on 1.8 **and** 1.21 without changes.
+
+---
+
+## ACF Commands
+
+Unify wraps Aikar Command Framework so you get automatic tab-completion,
+permission checks, and command trees with minimal setup.
+
+```kotlin
+import me.jordanfails.unify.acf.CommandHandler
+import co.aikar.commands.BaseCommand
+import co.aikar.commands.annotation.*
+
+@CommandAlias("heal")
+@CommandPermission("myplugin.heal")
+class HealCommand : BaseCommand() {
+
+    @Default
+    fun onHeal(sender: Player) {
+        sender.health = 20.0
+        sender.foodLevel = 20
+        sender.sendMessage("§aYou have been healed!")
+    }
+}
+
+// Register in onEnable:
+CommandHandler(PaperCommandManager(this)).registerCommands(HealCommand())
+```
+
+---
+
+## CommandHandler Wrapper
+
+Instead of wiring `PaperCommandManager` yourself, use Unify's
+`CommandHandler` wrapper:
+
+```kotlin
+val handler = CommandHandler(PaperCommandManager(plugin))
+handler.registerCommands(MyCommand())
+handler.registerContextResolver(...)  // for custom types
+```
+
+## Dive Deeper
+
+Each feature has its own detailed page:
+
+| Feature | Page |
+|---------|------|
+| **Commands** | [Commands](/docs/commands) — ACF, subcommands, tab-completion |
+| **Commands (advanced)** | [Context Resolvers](/docs/commands/context-resolvers) — custom parameter types |
+| **Config** | [Config](/docs/config) — YAML wrapper, enum pattern |
+| **Items** | [Items](/docs/items) — ItemBuilder, enchantments, XSupport |
+| **Menus** | [Menu System](/docs/menu-system) — paginated GUIs, buttons |
+| **Players** | [Players](/docs/players) — sounds, titles, action bars |
+| **Scheduling** | [Scheduling](/docs/scheduling) — tasks, delays, timers, async |
+| **Cross-Version** | [Cross-Version](/docs/cross-version) — XMaterial, version checks |

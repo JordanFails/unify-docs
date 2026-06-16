@@ -1,0 +1,139 @@
+---
+icon: Rocket
+title: Getting Started
+description: Overview and quickstart for the Unify library
+---
+
+Unify is a Kotlin library for Paper / Spigot plugins that provides
+cross-version NMS handling and a rich set of utility classes so you can
+focus on gameplay, not boilerplate.
+
+## Requirements
+
+| Dependency    | Version                               |
+| ------------- | ------------------------------------- |
+| **Java**      | 8+ (legacy) / 21+ (modern)            |
+| **Server**    | Paper 1.8–1.16 (legacy) / 1.17+ (modern) |
+| **Kotlin**    | 1.9+                                  |
+
+## Installation
+
+<Steps>
+  <Step>
+    ### Build Unify locally
+
+    Unify is published to **Maven Local**. Clone the Unify repository and run:
+
+    ```sh
+    cd Unify
+    ./gradlew bundledAll
+    ```
+
+    This produces two artifacts:
+
+    - `unify-legacy-1.0-SNAPSHOT.jar` — for Paper 1.8–1.16
+    - `unify-modern-1.0-SNAPSHOT.jar` — for Paper 1.17+
+  </Step>
+
+  <Step>
+    ### Add the dependency
+
+    Pick your variant based on your server version:
+
+    <Tabs items={['Legacy (1.8–1.16)', 'Modern (1.17+)']}>
+      <Tab value="Legacy (1.8–1.16)">
+        ```kotlin title="build.gradle.kts"
+        plugins {
+            kotlin("jvm") version "1.9.24"
+            id("com.gradleup.shadow") version "9.0.0-beta10"
+        }
+
+        repositories {
+            mavenLocal()
+            mavenCentral()
+            maven("https://repo.papermc.io/repository/maven-public/")
+        }
+
+        dependencies {
+            compileOnly("org.jetbrains.kotlin:kotlin-stdlib")
+            compileOnly("io.papermc.paper:paper-api:1.16.5-R0.1-SNAPSHOT")
+            compileOnly("me.jordanfails:unify-legacy:1.0-SNAPSHOT")
+        }
+
+        tasks.shadowJar {
+            archiveFileName.set("MyPlugin.jar")
+        }
+        ```
+      </Tab>
+
+      <Tab value="Modern (1.17+)">
+        ```kotlin title="build.gradle.kts"
+        plugins {
+            kotlin("jvm") version "2.1.20"
+            id("com.gradleup.shadow") version "9.0.0-beta10"
+        }
+
+        repositories {
+            mavenLocal()
+            mavenCentral()
+            maven("https://repo.papermc.io/repository/maven-public/")
+        }
+
+        dependencies {
+            compileOnly("org.jetbrains.kotlin:kotlin-stdlib")
+            compileOnly("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
+            compileOnly("me.jordanfails:unify-modern:1.0-SNAPSHOT")
+        }
+
+        tasks.shadowJar {
+            archiveFileName.set("MyPlugin.jar")
+        }
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step>
+    ### Deploy
+
+    Drop `Unify.jar` (the bundled jar from `./gradlew bundledAll`) **and** your
+    plugin jar into the server's `plugins/` folder.
+  </Step>
+</Steps>
+
+## Minimal Plugin
+
+```kotlin
+package me.jordanfails.myplugin
+
+import me.jordanfails.unify.CC
+import me.jordanfails.unify.Config
+import org.bukkit.plugin.java.JavaPlugin
+
+class MyPlugin : JavaPlugin() {
+
+    lateinit var config: Config
+
+    override fun onEnable() {
+        config = Config(this, "config")
+        server.consoleSender.sendMessage(CC.translate("&aMyPlugin enabled!"))
+    }
+
+    override fun onDisable() {
+        server.consoleSender.sendMessage(CC.translate("&cMyPlugin disabled!"))
+    }
+}
+```
+
+## Explore the Docs
+
+| Page | What you'll learn |
+|------|-----------------|
+| [Core Features](/docs/core-features) | Quick overview of every utility |
+| [Commands](/docs/commands) | ACF command framework setup |
+| [Config](/docs/config) | YAML configuration with type safety |
+| [Items](/docs/items) | ItemBuilder and cross-version materials |
+| [Menu System](/docs/menu-system) | Build paginated GUIs |
+| [Players](/docs/players) | Sounds, titles, action bars, resets |
+| [Scheduling](/docs/scheduling) | Tasks, delays, timers, async |
+| [Cross-Version](/docs/cross-version) | XSupport and version-safe code |

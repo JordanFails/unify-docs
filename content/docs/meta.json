@@ -1,0 +1,22 @@
+{
+  "pages": [
+    "getting-started",
+    "---Features---",
+    "commands",
+    "config",
+    "items",
+    "menu-system",
+    "players",
+    "scheduling",
+    "---Systems---",
+    "nametags",
+    "holograms",
+    "scoreboard",
+    "tab-list",
+    "npcs",
+    "bossbar",
+    "visibility",
+    "storage",
+    "cross-version"
+  ]
+}

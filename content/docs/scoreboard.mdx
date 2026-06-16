@@ -1,0 +1,113 @@
+---
+icon: Trophy
+title: Scoreboard
+description: Per-player sidebar scoreboards with providers and async updates
+---
+
+Unify's scoreboard system sends per-player sidebar scoreboards without
+interfering with the server's main scoreboard. It uses packet-based
+updates and supports async refreshing.
+
+## How it Works
+
+1. You register **ScoreboardProviders** — each provider defines a title
+   and lines for a scoreboard.
+2. Providers are sorted by weight; the highest-weight provider that
+   returns a scoreboard wins.
+3. The scoreboard refreshes automatically on a configurable interval.
+
+## Creating a Provider
+
+```kotlin
+import me.jordanfails.unify.scoreboard.ScoreboardHandler
+import me.jordanfails.unify.scoreboard.ScoreboardProvider
+import me.jordanfails.unify.scoreboard.ScoreboardInfo
+
+class GameScoreboardProvider : ScoreboardProvider("Game", 50) {
+
+    override fun fetchScoreboard(player: Player): ScoreboardInfo {
+        val game = gameManager.getGame(player) ?: return null
+
+        return createScoreboard(
+            title = "&b&l${game.name}",
+            lines = listOf(
+                "",
+                "&7Map: &f${game.mapName}",
+                "&7Players: &f${game.players.size}/${game.maxPlayers}",
+                "&7Time: &f${game.formattedTime}",
+                "",
+                "&emc.server.com"
+            )
+        )
+    }
+}
+```
+
+Register it:
+
+```kotlin
+ScoreboardHandler.registerProvider(GameScoreboardProvider())
+```
+
+## Built-in Provider
+
+```kotlin
+// Uses config values for title and lines
+ScoreboardHandler.registerProvider(ScoreboardProvider.DefaultScoreboardProvider())
+```
+
+## ScoreboardInfo
+
+```kotlin
+val info = ScoreboardProvider.createScoreboard(
+    title = "&d&lHUB",
+    lines = listOf(
+        "",
+        "&7Online: &f{online}",
+        "&7Rank: &f{rank}",
+        "",
+        "&emc.server.com"
+    )
+)
+```
+
+## Placeholders
+
+Providers can use dynamic placeholders. The built-in provider supports:
+
+| Placeholder | Description |
+|-------------|-------------|
+| `{player}` | Player name |
+| `{online}` | Online player count |
+| `{max_players}` | Server max players |
+| `{ping}` | Player ping (ms) |
+
+## Lifecycle
+
+```kotlin
+override fun onEnable() {
+    ScoreboardHandler.initialLoad()
+}
+
+override fun onDisable() {
+    ScoreboardHandler.disable()
+}
+```
+
+## Configuration
+
+```yaml
+scoreboard:
+  enabled: true
+  update-interval-ticks: 20
+```
+
+## Updating Individual Players
+
+```kotlin
+// Force refresh for one player
+ScoreboardHandler.reloadPlayer(player)
+
+// Remove scoreboard from a player
+ScoreboardHandler.removePlayer(player)
+```

@@ -1,0 +1,258 @@
+---
+icon: Terminal
+title: Commands
+description: ACF commands, permissions, tab-completion, and subcommands
+---
+
+Unify wraps Aikar Command Framework (ACF) to give you automatic
+tab-completion, permission checks, and clean command trees with minimal
+boilerplate.
+
+## Quick Example
+
+```kotlin
+import co.aikar.commands.BaseCommand
+import co.aikar.commands.annotation.*
+import me.jordanfails.unify.acf.CommandHandler
+import co.aikar.commands.PaperCommandManager
+
+@CommandAlias("heal|h")
+@CommandPermission("myplugin.heal")
+class HealCommand : BaseCommand() {
+
+    @Default
+    @Description("Heal yourself or another player")
+    fun onHeal(
+        sender: Player,
+        @Optional target: Player?
+    ) {
+        val player = target ?: sender
+        player.health = 20.0
+        player.foodLevel = 20
+        player.sendMessage("§aYou have been healed!")
+    }
+}
+
+// In onEnable:
+val handler = CommandHandler(PaperCommandManager(this))
+handler.registerCommands(HealCommand())
+```
+
+## Annotations
+
+<Tabs items={['Command', 'Parameters', 'Meta']}>
+  <Tab value="Command">
+    | Annotation | Purpose | Example |
+    |------------|---------|---------|
+    | `@CommandAlias("name\|alias")` | Sets command name and aliases | `@CommandAlias("kit\|kits")` |
+    | `@CommandPermission("perm")` | Required permission node | `@CommandPermission("myplugin.kit")` |
+    | `@Default` | Runs when no subcommand is given | `@Default` |
+    | `@Subcommand("sub")` | Defines a subcommand | `@Subcommand("create")` |
+    | `@Description("text")` | Description for help | `@Description("Create a kit")` |
+    | `@Syntax("<arg>")` | Custom syntax string | `@Syntax("<name>")` |
+  </Tab>
+
+  <Tab value="Parameters">
+    | Annotation | Purpose | Example |
+    |------------|---------|---------|
+    | `@Optional` | Makes a parameter optional | `@Optional target: Player?` |
+    | `@Name("label")` | Renames the parameter in help | `@Name("kitName") name: String` |
+    | `@CommandCompletion("@players")` | Tab-completion hint | `@CommandCompletion("@kits")` |
+    | `@Values("a|b|c")` | Restricts to specific values | `@Values("red|blue|green")` |
+  </Tab>
+
+  <Tab value="Meta">
+    | Annotation | Purpose |
+    |------------|---------|
+    | `@CatchUnknown` | Catches unknown subcommands |
+    | `@HelpCommand` | Marks the help handler |
+    | `@Conditions("condition")` | Adds a condition check |
+    | `@Private` | Hides from public help |
+  </Tab>
+</Tabs>
+
+## Subcommands
+
+```kotlin
+@CommandAlias("kit")
+@CommandPermission("myplugin.kit")
+class KitCommand : BaseCommand() {
+
+    @Subcommand("create")
+    @Description("Create a new kit")
+    fun onCreate(
+        sender: Player,
+        @Name("kitName") name: String
+    ) {
+        // create kit logic
+    }
+
+    @Subcommand("give")
+    @Description("Give a kit to a player")
+    fun onGive(
+        sender: CommandSender,
+        @Name("kitName") kit: String,
+        @Name("player") @Optional target: Player?
+    ) {
+        // give kit logic
+    }
+
+    @Subcommand("list")
+    @Description("List all available kits")
+    fun onList(sender: CommandSender) {
+        // list kits
+    }
+}
+```
+
+## Tab Completion
+
+ACF supports built-in completions via `@CommandCompletion`:
+
+```kotlin
+@CommandCompletion("@players")
+fun onTeleport(sender: Player, @Name("target") target: Player) { }
+
+@CommandCompletion("@range:1-10")
+fun onSetLevel(sender: Player, @Name("level") level: Int) { }
+```
+
+You can also register custom completions:
+
+```kotlin
+commandManager.commandCompletions.registerAsyncCompletion("kits") { c ->
+    kitManager.getKitNames()
+}
+```
+
+## CommandHandler Wrapper
+
+Unify's `CommandHandler` simplifies registration:
+
+```kotlin
+val handler = CommandHandler(PaperCommandManager(plugin))
+
+// Register one or many commands
+handler.registerCommands(HealCommand())
+handler.registerCommands(KitCommand(), ShopCommand())
+
+// Register custom context resolvers
+handler.registerContextResolver(Player::class.java) { c ->
+    Bukkit.getPlayer(c.popFirstArg())
+        ?: throw InvalidCommandArgument("Player not found")
+}
+```
+
+## Context Resolvers
+
+ACF automatically handles basic types (`Player`, `String`, `Int`, `Double`),
+but you can teach it to resolve any custom type from command arguments.
+
+### Basic Resolver
+
+```kotlin
+import me.jordanfails.unify.acf.CommandHandler
+import co.aikar.commands.InvalidCommandArgument
+
+val handler = CommandHandler(PaperCommandManager(plugin))
+
+handler.registerContextResolver(Rank::class.java) { c ->
+    val name = c.popFirstArg()
+    Rank.getByName(name)
+        ?: throw InvalidCommandArgument("Unknown rank: $name")
+}
+```
+
+Now you can use `Rank` as a parameter type:
+
+```kotlin
+@Subcommand("setrank")
+fun onSetRank(
+    sender: CommandSender,
+    @Name("player") target: Player,
+    @Name("rank") rank: Rank
+) {
+    target.setRank(rank)
+    sender.sendMessage("§aSet ${target.name}'s rank to ${rank.displayName}")
+}
+```
+
+### Async Resolver
+
+For resolvers that hit a database or do I/O:
+
+```kotlin
+handler.registerAsyncContextResolver(Kit::class.java) { c ->
+    val name = c.popFirstArg()
+    kitDao.findByName(name).await()
+        ?: throw InvalidCommandArgument("Unknown kit: $name")
+}
+```
+
+### Optional Resolvers
+
+Make a resolver optional by returning `null` and marking the parameter:
+
+```kotlin
+handler.registerContextResolver(Warp::class.java) { c ->
+    val name = c.popFirstArg()
+    warpManager.getWarp(name) // returns null if not found
+}
+
+@Subcommand("warp")
+fun onWarp(sender: Player, @Optional @Name("warp") warp: Warp?) {
+    if (warp == null) {
+        WarpMenu().openMenu(sender)
+    } else {
+        sender.teleport(warp.location)
+    }
+}
+```
+
+### Resolver with Multiple Args
+
+Some types need more than one argument:
+
+```kotlin
+handler.registerContextResolver(Duration::class.java) { c ->
+    val amount = c.popFirstArg().toLongOrNull()
+        ?: throw InvalidCommandArgument("Invalid number")
+    val unit = c.popFirstArg().lowercase()
+
+    when (unit) {
+        "s", "sec", "seconds" -> Duration.ofSeconds(amount)
+        "m", "min", "minutes" -> Duration.ofMinutes(amount)
+        "h", "hr", "hours" -> Duration.ofHours(amount)
+        "d", "days" -> Duration.ofDays(amount)
+        else -> throw InvalidCommandArgument("Invalid time unit: $unit")
+    }
+}
+```
+
+Usage:
+
+```kotlin
+@Subcommand("mute")
+fun onMute(
+    sender: CommandSender,
+    @Name("player") target: Player,
+    @Name("duration") duration: Duration
+) {
+    punishmentManager.mute(target, duration)
+}
+```
+
+```
+/mute JordanFails 30 minutes
+```
+
+### Best Practices
+
+- Keep resolvers fast — use caching for database lookups
+- Provide clear error messages via `InvalidCommandArgument`
+- Use `@Name` annotations to improve help text
+- Register all resolvers in `onEnable` before commands
+
+## Next Steps
+
+- Combine commands with the [Menu System](/docs/menu-system) for GUI-driven commands

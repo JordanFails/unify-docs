@@ -1,0 +1,138 @@
+---
+title: Storage
+description: Data persistence with Honey — pick a backend and start storing
+icon: Database
+---
+
+Unify integrates with **Honey**, a Kotlin data framework that makes
+persisting data dead simple. Pick a backend, define your store, and
+start storing — no boilerplate.
+
+## Quick Start
+
+```kotlin
+import me.jordanfails.honey.DataHandler
+import me.jordanfails.honey.DataStoreType
+import me.jordanfails.honey.connection.dataFramework
+
+// 1. Configure your backend
+dataFramework {
+    sqlite(path = "./data/honey.db")
+}
+
+// 2. Create a store
+val playerStore = DataHandler.createStoreType<String, PlayerData>(DataStoreType.SQL) {
+    it.id = "players"
+}
+
+// 3. Store data
+val player = PlayerData(
+    uuid = player.uniqueId.toString(),
+    name = player.name,
+    kills = 0,
+    deaths = 0
+)
+playerStore.store(player.uuid, player)
+
+// 4. Load it back
+val loaded = playerStore.retrieve(player.uuid)
+println("Loaded: ${loaded?.name} — ${loaded?.kills} kills")
+```
+
+## Data Class
+
+Any `data class` works. Honey uses Gson under the hood:
+
+```kotlin
+data class PlayerData(
+    val uuid: String,
+    var name: String,
+    var kills: Int = 0,
+    var deaths: Int = 0,
+    var lastLogin: Long = System.currentTimeMillis()
+)
+```
+
+Add `@ExcludeFromPersistence` to skip fields:
+
+```kotlin
+data class PlayerData(
+    val uuid: String,
+    var name: String,
+
+    @ExcludeFromPersistence
+    var transientCache: Map<String, Any> = emptyMap()
+)
+```
+
+## Store Operations
+
+```kotlin
+val store = DataHandler.createStoreType<String, PlayerData>(DataStoreType.SQL) {
+    it.id = "players"
+}
+
+// Store (upsert)
+store.store(player.uuid, player)
+
+// Retrieve
+val loaded = store.retrieve(player.uuid)  // returns PlayerData? or null
+
+// Delete
+store.delete(player.uuid)
+
+// Check existence
+val exists = store.exists(player.uuid)
+
+// Get all keys
+val allKeys = store.keys()  // Set<String>
+```
+
+## Swapping Backends
+
+Change one line to swap from flatfile to SQL — everything else stays the same:
+
+```kotlin
+// Before (flatfile)
+dataFramework { }
+val store = DataHandler.createStoreType<String, PlayerData>(DataStoreType.FLATFILE) { ... }
+
+// After (SQL) — same store API
+dataFramework { sqlite(path = "./data/honey.db") }
+val store = DataHandler.createStoreType<String, PlayerData>(DataStoreType.SQL) { ... }
+```
+
+## Lifecycle
+
+```kotlin
+override fun onEnable() {
+    dataFramework {
+        sqlite(path = File(dataFolder, "data.db").path)
+    }
+}
+
+override fun onDisable() {
+    DataHandler.closeAllConnections()
+}
+```
+
+## Backends
+
+| Backend | Best For | Page |
+|---------|----------|------|
+| **Flatfile** | Small plugins, dev mode, zero config | [Flatfile](/docs/storage/flatfile) |
+| **SQL** | Relational data, joins, most production use | [SQL](/docs/storage/sql) |
+| **MongoDB** | Document data, flexible schemas, high write throughput | [MongoDB](/docs/storage/mongodb) |
+| **Redis** | Caching, sessions, pub/sub, real-time data | [Redis](/docs/storage/redis) |
+
+## Dependencies
+
+Add Honey to your `build.gradle.kts`:
+
+```kotlin
+dependencies {
+    compileOnly("me.jordanfails:honey:1.0-SNAPSHOT")
+}
+```
+
+Honey is bundled in `Unify.jar`, so you only need the compile-only dependency.

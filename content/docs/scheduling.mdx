@@ -1,0 +1,126 @@
+---
+icon: Clock
+title: Scheduling
+description: Run, delay, repeat, and async tasks with simple shortcuts
+---
+
+Unify's `Tasks` class cuts through Bukkit's verbose scheduler API.
+
+## Run Once
+
+```kotlin
+import me.jordanfails.unify.Tasks
+
+// Run on the next server tick (main thread)
+Tasks.run(plugin) {
+    player.sendMessage("Task ran!")
+}
+```
+
+## Run After Delay
+
+```kotlin
+// Run after 20 ticks (1 second)
+Tasks.runLater(plugin, 20L) {
+    player.sendMessage("One second later!")
+}
+
+// Run after 5 seconds
+Tasks.runLater(plugin, 100L) {
+    player.sendMessage("5 seconds later!")
+}
+```
+
+## Run Repeatedly
+
+```kotlin
+// Run every 2 seconds (40 ticks), starting immediately
+val task = Tasks.runTimer(plugin, 0L, 40L) {
+    player.sendMessage("Every 2 seconds")
+}
+
+// Cancel later
+task.cancel()
+```
+
+## Run Async
+
+```kotlin
+// Run on a background thread — safe for I/O and heavy computation
+Tasks.runAsync(plugin) {
+    val result = heavyDatabaseQuery()
+
+    // Jump back to main thread to interact with Bukkit API
+    Tasks.run(plugin) {
+        player.sendMessage("Result: $result")
+    }
+}
+```
+
+## Async with Delay
+
+```kotlin
+// Async after delay
+Tasks.runAsyncLater(plugin, 60L) {
+    // runs async after 3 seconds
+}
+
+// Async repeating
+Tasks.runAsyncTimer(plugin, 0L, 200L) {
+    // runs async every 10 seconds
+}
+```
+
+## Countdown Pattern
+
+```kotlin
+fun startCountdown(player: Player, seconds: Int) {
+    var remaining = seconds
+
+    val task = Tasks.runTimer(plugin, 0L, 20L) {
+        if (remaining <= 0) {
+            PlayerUtils.sendTitle(player, "&a&lGo!", "")
+            this.cancel()
+            return@runTimer
+        }
+
+        PlayerUtils.sendTitle(player, "&e$remaining", "&7Get ready...")
+        remaining--
+    }
+}
+```
+
+## Task References
+
+Every `Tasks` method returns a `BukkitTask` you can cancel:
+
+```kotlin
+class GameManager(private val plugin: JavaPlugin) {
+
+    private var updateTask: BukkitTask? = null
+
+    fun start() {
+        updateTask = Tasks.runTimer(plugin, 0L, 20L) {
+            updateGameState()
+        }
+    }
+
+    fun stop() {
+        updateTask?.cancel()
+        updateTask = null
+    }
+}
+```
+
+## Thread Safety
+
+| Method | Thread | Safe for |
+|--------|--------|----------|
+| `Tasks.run` | Main | Bukkit API, block changes, entity spawning |
+| `Tasks.runAsync` | Background | Database, HTTP, file I/O, heavy math |
+| `Tasks.runLater` | Main | Delayed Bukkit operations |
+| `Tasks.runAsyncLater` | Background | Delayed I/O |
+| `Tasks.runTimer` | Main | Repeating game logic |
+| `Tasks.runAsyncTimer` | Background | Repeating background work |
+
+**Rule of thumb:** Always use main thread for anything that touches Bukkit's world, entities, or players. Use async for everything else.

@@ -1,0 +1,113 @@
+---
+icon: Gauge
+title: BossBar
+description: Cross-version boss bars with colors, styles, and per-player visibility
+---
+
+Unify's `UnifyBossBar` works on 1.8 through 1.21. On 1.9+ it uses Bukkit's
+native BossBar API. On 1.8 it falls back to NMS Wither entity packets.
+
+## Creating a Boss Bar
+
+```kotlin
+import me.jordanfails.unify.bossbar.UnifyBossBar
+import me.jordanfails.unify.bossbar.BossBarColor
+import me.jordanfails.unify.bossbar.BossBarStyle
+
+val bossBar = UnifyBossBar.create("&c&lDragon Battle")
+    .setProgress(0.75)
+    .setColor(BossBarColor.RED)
+    .setStyle(BossBarStyle.SOLID)
+```
+
+## Showing to Players
+
+```kotlin
+// Add a player
+bossBar.addPlayer(player)
+
+// Remove a player
+bossBar.removePlayer(player)
+
+// Check if viewing
+val isViewing = bossBar.hasPlayer(player)
+```
+
+## Updating
+
+```kotlin
+// Change title
+bossBar.setTitle("&c&lDragon &7- &e75% HP")
+
+// Change progress (0.0 to 1.0)
+bossBar.setProgress(0.5)
+
+// Change color
+bossBar.setColor(BossBarColor.YELLOW)
+
+// Change style
+bossBar.setStyle(BossBarStyle.SEGMENTED_10)
+```
+
+All setters return the boss bar for chaining:
+
+```kotlin
+val bar = UnifyBossBar.create("&b&lLoading...")
+    .setProgress(0.0)
+    .setColor(BossBarColor.BLUE)
+    .setStyle(BossBarStyle.SOLID)
+```
+
+## Colors
+
+| Color | Description |
+|-------|-------------|
+| `PINK` | Default pink |
+| `BLUE` | Blue |
+| `RED` | Red |
+| `GREEN` | Green |
+| `YELLOW` | Yellow |
+| `PURPLE` | Purple |
+| `WHITE` | White |
+
+## Styles
+
+| Style | Description |
+|-------|-------------|
+| `SOLID` | Solid bar, no segments |
+| `SEGMENTED_6` | 6 segments |
+| `SEGMENTED_10` | 10 segments |
+| `SEGMENTED_12` | 12 segments |
+| `SEGMENTED_20` | 20 segments |
+
+## Cleanup
+
+```kotlin
+// Hide from all players
+bossBar.removeAll()
+```
+
+## Example: Dungeon Boss
+
+```kotlin
+class DungeonBoss(val name: String, val maxHealth: Double) {
+    private val bossBar = UnifyBossBar.create("&c&l$name")
+        .setColor(BossBarColor.RED)
+        .setStyle(BossBarStyle.SEGMENTED_10)
+
+    var health: Double = maxHealth
+        set(value) {
+            field = value.coerceIn(0.0, maxHealth)
+            bossBar.setProgress(field / maxHealth)
+            bossBar.setTitle("&c&l$name &7- &e${(field / maxHealth * 100).toInt()}%")
+        }
+
+    fun showTo(players: List<Player>) {
+        players.forEach { bossBar.addPlayer(it) }
+    }
+
+    fun hide() {
+        bossBar.removeAll()
+    }
+}
+```

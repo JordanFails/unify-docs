@@ -1,0 +1,126 @@
+---
+icon: Package
+title: Items
+description: ItemBuilder, enchantments, and cross-version material support
+---
+
+Unify makes building and manipulating `ItemStack`s effortless.
+
+## ItemBuilder
+
+Create complex items with a clean chainable API:
+
+```kotlin
+import me.jordanfails.unify.ItemBuilder
+import org.bukkit.Material
+import org.bukkit.enchantments.Enchantment
+
+val sword = ItemBuilder(Material.DIAMOND_SWORD)
+    .name("&b&lExcalibur")
+    .lore(
+        "&7A legendary blade",
+        "",
+        "&e⚔ +15 Attack Damage",
+        "&c❤ Unbreakable"
+    )
+    .enchant(Enchantment.DAMAGE_ALL, 5)
+    .enchant(Enchantment.FIRE_ASPECT, 2)
+    .unbreakable(true)
+    .glow(true)
+    .hideFlags(true)
+    .amount(1)
+    .build()
+```
+
+| Method | Description |
+|--------|-------------|
+| `name(String)` | Display name (auto-colorized) |
+| `lore(vararg String)` | Lore lines (auto-colorized) |
+| `lore(List<String>)` | Lore from a list |
+| `enchant(Enchantment, Int)` | Add enchantment |
+| `removeEnchant(Enchantment)` | Remove enchantment |
+| `unbreakable(Boolean)` | Set Unbreakable flag |
+| `glow(Boolean)` | Fake enchantment glow |
+| `hideFlags(Boolean)` | Hide item flags |
+| `amount(Int)` | Stack size |
+| `durability(Int)` | Set durability |
+| `skullOwner(String)` | Set skull owner |
+| `nbt(String, String)` | Set NBT tag |
+| `build()` | Return `ItemStack` |
+
+## Modifying Existing Items
+
+```kotlin
+val existing = player.inventory.itemInMainHand
+
+val upgraded = ItemBuilder(existing)
+    .name("&6&lUpgraded Sword")
+    .lore("&7Enhanced in the forge")
+    .enchant(Enchantment.DAMAGE_ALL, 3)
+    .build()
+
+player.inventory.setItemInMainHand(upgraded)
+```
+
+## XSupport — Cross-Version Materials
+
+Use `XMaterial` to write code that works on 1.8 through 1.21:
+
+```kotlin
+import me.jordanfails.unify.XSupport
+import me.jordanfails.unify.xseries.XMaterial
+
+// Resolves to the correct Material for the server version
+val material = XSupport.resolve(XMaterial.DIAMOND_SWORD)
+val item = ItemBuilder(material).name("&bSword").build()
+```
+
+### Common XMaterial Patterns
+
+```kotlin
+// Safe material resolution
+val mat = XSupport.resolve(XMaterial.NETHERITE_INGOT)
+    ?: Material.IRON_INGOT // fallback
+
+// Check if material exists on this version
+if (XSupport.isAvailable(XMaterial.NETHERITE_INGOT)) {
+    // use netherite
+}
+
+// Legacy to modern
+val legacyMat = XSupport.resolve(XMaterial.WOOL)
+val colored = ItemBuilder(legacyMat).build()
+```
+
+## Item Comparison
+
+```kotlin
+import me.jordanfails.unify.ItemBuilder
+
+// Check if two items are similar (ignores amount)
+val areSimilar = ItemBuilder.isSimilar(item1, item2)
+
+// Check exact match (includes amount)
+val areEqual = ItemBuilder.isEqual(item1, item2)
+```
+
+## Quick Item Templates
+
+```kotlin
+// Common filler item
+val filler = ItemBuilder(Material.GRAY_STAINED_GLASS_PANE)
+    .name(" ")
+    .build()
+
+// Close button
+val close = ItemBuilder(Material.BARRIER)
+    .name("&c&lClose")
+    .lore("&7Click to close")
+    .build()
+
+// Info item
+val info = ItemBuilder(Material.BOOK)
+    .name("&e&lInformation")
+    .glow(true)
+    .build()
+```

@@ -1,0 +1,113 @@
+---
+icon: Eye
+title: Visibility
+description: Vanish system and custom visibility adapters
+---
+
+Unify provides two visibility systems: a simple vanish handler and a
+flexible adapter-based visibility system for custom hide/show logic.
+
+## Vanish Handler
+
+The simplest way to hide a player from others:
+
+```kotlin
+import me.jordanfails.unify.visibility.VanishHandler
+
+// Vanish a player
+VanishHandler.setVanished(player, true)
+
+// Unvanish
+VanishHandler.setVanished(player, false)
+
+// Toggle
+val nowVanished = VanishHandler.toggle(player)
+
+// Check if vanished
+val isVanished = VanishHandler.isVanished(player)
+
+// Check if a viewer can see vanished players
+val canSee = VanishHandler.canSeeVanished(viewer)
+```
+
+### Permissions
+
+| Permission | Description |
+|------------|-------------|
+| `unify.vanish` | Use /vanish command |
+| `unify.vanish.other` | Vanish other players |
+| `unify.vanish.see` | See vanished players |
+
+## Visibility Adapters
+
+For more complex hide/show logic, use **VisibilityAdapters**:
+
+```kotlin
+import me.jordanfails.unify.visibility.VisibilityHandler
+import me.jordanfails.unify.visibility.VisibilityAdapter
+
+class GameVisibilityAdapter : VisibilityAdapter("Game", 50) {
+
+    override fun canSee(viewer: Player, target: Player): Boolean {
+        val viewerGame = gameManager.getGame(viewer)
+        val targetGame = gameManager.getGame(target)
+
+        // Players in different games can't see each other
+        return viewerGame == targetGame
+    }
+}
+```
+
+Register it:
+
+```kotlin
+VisibilityHandler.registerAdapter(GameVisibilityAdapter())
+```
+
+## Visibility Overrides
+
+Sometimes you need to force a visibility decision regardless of adapters.
+Use **OverrideHandlers** for that:
+
+```kotlin
+import me.jordanfails.unify.visibility.VisibilityHandler
+import me.jordanfails.unify.visibility.OverrideHandler
+
+class SpectatorOverride : OverrideHandler("Spectator", 100) {
+
+    override fun canSee(viewer: Player, target: Player): Boolean? {
+        // Spectators can always see everyone
+        if (viewer.gameMode == GameMode.SPECTATOR) {
+            return true
+        }
+        // Don't override for non-spectators
+        return null
+    }
+}
+```
+
+Register it:
+
+```kotlin
+VisibilityHandler.registerOverride(SpectatorOverride())
+```
+
+## How Decisions Work
+
+When checking if `viewer` can see `target`:
+
+1. **Override handlers** are checked first (highest weight wins).
+   If any override returns `true` or `false`, that decision is final.
+2. If no override applies, **adapters** are checked.
+   If any adapter says the target should be hidden, they're hidden.
+3. If no adapter hides the target, they are **visible**.
+
+## Updating Visibility
+
+```kotlin
+// Update one player for everyone
+VisibilityHandler.update(player)
+
+// Update all players
+VisibilityHandler.updateAll()
+```

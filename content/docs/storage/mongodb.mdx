@@ -1,0 +1,120 @@
+---
+icon: <svg fill="none" viewBox="0 0 120 257"><path fill="#9CA3AF" d="M82.323 28.55C71.537 15.795 62.249 2.84 60.35.15c-.2-.2-.5-.2-.7 0-1.897 2.69-11.185 15.645-21.971 28.4C-54.902 146.238 52.26 225.661 52.26 225.661l.9.597c.798 12.258 2.795 29.896 2.795 29.896h7.99s1.998-17.539 2.797-29.896l.899-.697c.1 0 107.263-79.323 14.68-197.01ZM59.95 223.867s-4.793-4.086-6.092-6.179v-.199l5.793-128.151c0-.4.6-.4.6 0l5.792 128.151v.199c-1.299 2.093-6.093 6.179-6.093 6.179Z"/></svg>
+activeIcon: <svg fill="none" viewBox="0 0 120 257"><path fill="#00ED64" d="M82.323 28.55C71.537 15.795 62.249 2.84 60.35.15c-.2-.2-.5-.2-.7 0-1.897 2.69-11.185 15.645-21.971 28.4C-54.902 146.238 52.26 225.661 52.26 225.661l.9.597c.798 12.258 2.795 29.896 2.795 29.896h7.99s1.998-17.539 2.797-29.896l.899-.697c.1 0 107.263-79.323 14.68-197.01ZM59.95 223.867s-4.793-4.086-6.092-6.179v-.199l5.793-128.151c0-.4.6-.4.6 0l5.792 128.151v.199c-1.299 2.093-6.093 6.179-6.093 6.179Z"/></svg>
+title: MongoDB
+description: Document storage with native JSON support
+---
+
+Honey's MongoDB backend stores your data classes as documents in
+collections. Perfect when you need flexible schemas or high write
+throughput.
+
+## When to Use
+
+- Flexible or evolving schemas
+- High write throughput (leaderboards, analytics)
+- Document-oriented data (nested objects, arrays)
+- Already running MongoDB in your stack
+
+## Setup
+
+```kotlin
+import me.jordanfails.honey.DataHandler
+import me.jordanfails.honey.DataStoreType
+import me.jordanfails.honey.connection.dataFramework
+
+dataFramework {
+    mongo(
+        uri = "mongodb://localhost:27017/myplugin",
+        database = "myplugin"
+    )
+}
+
+val store = DataHandler.createStoreType<String, PlayerData>(DataStoreType.MONGO) {
+    it.id = "players"  // collection name
+}
+```
+
+## Authentication
+
+```kotlin
+dataFramework {
+    mongo(
+        uri = "mongodb://username:password@localhost:27017/myplugin",
+        database = "myplugin"
+    )
+}
+```
+
+## Replica Sets
+
+```kotlin
+dataFramework {
+    mongo(
+        uri = "mongodb://host1:27017,host2:27017,host3:27017/myplugin?replicaSet=rs0",
+        database = "myplugin"
+    )
+}
+```
+
+## Full Example
+
+```kotlin
+data class PlayerData(
+    val uuid: String,
+    var name: String,
+    var kills: Int = 0,
+    var deaths: Int = 0,
+    var inventory: List<String> = emptyList()  // Mongo handles arrays natively
+)
+
+class MyPlugin : JavaPlugin() {
+
+    lateinit var store: DataStore<String, PlayerData>
+
+    override fun onEnable() {
+        dataFramework {
+            mongo(
+                uri = "mongodb://localhost:27017/myplugin",
+                database = "myplugin"
+            )
+        }
+
+        store = DataHandler.createStoreType(DataStoreType.MONGO) {
+            it.id = "players"
+        }
+    }
+
+    override fun onDisable() {
+        DataHandler.closeAllConnections()
+    }
+
+    fun addKill(player: Player) {
+        val data = store.retrieve(player.uniqueId.toString())
+            ?: PlayerData(player.uniqueId.toString(), player.name)
+
+        data.kills++
+        store.store(data.uuid, data)
+    }
+}
+```
+
+## In MongoDB
+
+```javascript
+// Document in the "players" collection
+{
+  "_id": "550e8400-e29b-41d4-a716-446655440000",
+  "uuid": "550e8400-e29b-41d4-a716-446655440000",
+  "name": "JordanFails",
+  "kills": 42,
+  "deaths": 7,
+  "inventory": ["diamond_sword", "shield", "golden_apple"]
+}
+```
+
+## Limitations
+
+Honey's Mongo backend uses the document `_id` as the store key. You
+cannot run custom Mongo queries through Honey — use the Mongo driver
+directly if you need aggregation pipelines or complex filters.

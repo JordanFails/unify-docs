@@ -1,0 +1,127 @@
+---
+icon: ScanEye
+title: Holograms
+description: Floating text and item displays with file persistence
+---
+
+Unify provides a hologram system that creates floating lines of text
+(and items) visible only to specific players. Holograms are persisted
+to `holograms.yml` and automatically shown to players on join.
+
+## Creating Holograms
+
+```kotlin
+import me.jordanfails.unify.hologram.HologramManager
+import me.jordanfails.unify.hologram.UnifyHologram
+
+// Simple text hologram
+val hologram = UnifyHologram.create(
+    location = spawnLocation,
+    "&b&lWelcome!",
+    "&7Use /help for commands"
+)
+
+// Or with the constructor
+val hologram = UnifyHologram(
+    location = spawnLocation,
+    lines = listOf(
+        HologramLine.Text("&b&lWelcome!"),
+        HologramLine.Text("&7Use /help for commands")
+    )
+)
+```
+
+Register it with the manager:
+
+```kotlin
+HologramManager.register("spawn-info", hologram)
+```
+
+## Item Lines
+
+Holograms can also display floating items:
+
+```kotlin
+val itemHologram = UnifyHologram(
+    location = location,
+    lines = listOf(
+        HologramLine.Item(diamondSword),
+        HologramLine.Text("&b&lExcalibur")
+    )
+)
+```
+
+## Managing Lines
+
+```kotlin
+// Add a line
+hologram.addLine("&eNew line added!")
+
+// Remove a line by index
+hologram.removeLine(1)
+
+// Set a line
+hologram.setLine(0, "&c&lUpdated!")
+
+// Get all text lines
+val lines = hologram.textLines
+```
+
+## Viewers
+
+By default, all players in the same world see the hologram. You can
+control viewers manually:
+
+```kotlin
+// Show to a specific player
+hologram.addViewer(player)
+
+// Hide from a specific player
+hologram.removeViewer(player)
+
+// Check if a player can see it
+val canSee = hologram.hasViewer(player)
+```
+
+## Persistence
+
+Holograms registered with `HologramManager` are saved to `holograms.yml`:
+
+```kotlin
+HologramManager.register("spawn-welcome", welcomeHologram)
+HologramManager.save()
+```
+
+On server start:
+
+```kotlin
+override fun onEnable() {
+    HologramManager.enable(this)
+}
+
+override fun onDisable() {
+    HologramManager.disable()
+}
+```
+
+## Moving Holograms
+
+```kotlin
+hologram.teleport(newLocation)
+```
+
+## File Format
+
+The saved `holograms.yml` looks like:
+
+```yaml
+holograms:
+  spawn-welcome:
+    world: world
+    x: 100.5
+    y: 65.0
+    z: -50.5
+    lines:
+      - "&b&lWelcome!"
+      - "&7Use /help for commands"
+```

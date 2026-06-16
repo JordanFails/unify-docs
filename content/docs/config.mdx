@@ -1,0 +1,129 @@
+---
+icon: Settings
+title: Config
+description: YAML configuration with type safety and enum-based patterns
+---
+
+Unify wraps Bukkit's `FileConfiguration` with a simpler, safer API.
+
+## Basic Usage
+
+```kotlin
+import me.jordanfails.unify.Config
+
+class MyPlugin : JavaPlugin() {
+
+    lateinit var config: Config
+
+    override fun onEnable() {
+        config = Config(this, "config")
+
+        val prefix = config.getString("prefix", "&8[&bPlugin&8] ")
+        val maxPlayers = config.getInt("max-players", 10)
+        val debug = config.getBoolean("debug", false)
+    }
+}
+```
+
+## Creating Default Configs
+
+```kotlin
+// Creates config.yml in your plugin folder
+// Copies from resources/config.yml if it exists
+val config = Config(this, "config")
+
+// Creates shops/shops.yml
+val shops = Config(this, "shops/shops")
+```
+
+## Type-Safe Access
+
+| Method | Default | Returns |
+|--------|---------|---------|
+| `getString(path, default)` | `""` | `String` |
+| `getInt(path, default)` | `0` | `Int` |
+| `getDouble(path, default)` | `0.0` | `Double` |
+| `getBoolean(path, default)` | `false` | `Boolean` |
+| `getStringList(path)` | `emptyList()` | `List<String>` |
+| `getSection(path)` | — | `ConfigurationSection?` |
+
+## Saving & Reloading
+
+```kotlin
+config.set("player-data.kills", kills)
+config.save()
+
+config.reload()
+```
+
+## Advanced Patterns
+
+<Accordions>
+  <Accordion title="Enum-based config (Voyage-style)">
+    For type-safe configs that are easy to refactor:
+
+    ```kotlin
+    enum class PluginConfig(val path: String, val defaultValue: Any) {
+        PREFIX("messages.prefix", "&8[&bMyPlugin&8] "),
+        MAX_PLAYERS("limits.max-players", 50),
+        CHAT_FORMAT("chat.format", "&7{player}&8: &f{message}"),
+        DEBUG_MODE("settings.debug", false),
+        ALLOWED_WORLDS("settings.worlds", listOf("world", "world_nether"));
+
+        companion object {
+            lateinit var config: Config
+        }
+
+        fun getString(): String =
+            config.getString(path, defaultValue.toString())
+
+        fun getInt(): Int =
+            when (defaultValue) {
+                is Number -> defaultValue.toInt()
+                else -> config.getInt(path, 0)
+            }
+
+        fun getBoolean(): Boolean =
+            when (defaultValue) {
+                is Boolean -> defaultValue
+                else -> config.getBoolean(path, false)
+            }
+
+        fun getStringList(): List<String> =
+            config.getStringList(path)
+    }
+    ```
+
+    Usage:
+
+    ```kotlin
+    PluginConfig.config = Config(this, "config")
+    val prefix = PluginConfig.PREFIX.getString()
+    val max = PluginConfig.MAX_PLAYERS.getInt()
+    ```
+  </Accordion>
+
+  <Accordion title="Nested config traversal">
+    ```kotlin
+    val kits = Config(this, "kits")
+
+    for (key in kits.getSection("kits")?.getKeys(false) ?: emptySet()) {
+        val name = kits.getString("kits.$key.name")
+        val items = kits.getSection("kits.$key.items")
+        // build kit
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Per-player config files">
+    ```kotlin
+    fun getPlayerConfig(player: Player): Config {
+        return Config(plugin, "players/${player.uniqueId}")
+    }
+
+    val playerConfig = getPlayerConfig(player)
+    playerConfig.set("stats.kills", kills)
+    playerConfig.save()
+    ```
+  </Accordion>
+</Accordions>

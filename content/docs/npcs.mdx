@@ -1,0 +1,121 @@
+---
+icon: Bot
+title: NPCs
+description: Player NPCs with skins, holograms, click actions, and file persistence
+---
+
+Unify's NPC system spawns player-type NPCs that look like real players.
+They support custom skins, floating holograms, click commands, and are
+persisted to `npcs.yml`.
+
+## Creating an NPC
+
+```kotlin
+import me.jordanfails.unify.npc.NPCManager
+import me.jordanfails.unify.npc.UnifyNPC
+
+val npc = NPCManager.create(
+    id = "spawn-guide",
+    location = spawnLocation,
+    hologramLines = listOf("&b&lGuide", "&7Click me!"),
+    actionCommand = "menu guide"
+)
+```
+
+## Skins
+
+Set a skin by name, URL, or base64:
+
+```kotlin
+// By player name
+npc?.setSkin(UnifyNPC.SkinType.NAME, "Notch")
+
+// By texture URL
+npc?.setSkin(UnifyNPC.SkinType.URL, "https://textures.minecraft.net/texture/...")
+
+// By base64 value
+npc?.setSkin(UnifyNPC.SkinType.BASE64, "eyJ0aW1lc3RhbXB...")
+
+// Remove skin
+npc?.clearSkin()
+```
+
+## Holograms
+
+```kotlin
+// Update hologram lines
+npc?.setHologramLines(listOf("&c&lShop", "&7Right-click to open"))
+```
+
+## Click Actions
+
+When a player clicks an NPC, two things happen:
+
+1. **Runtime action** — executes a registered `NPCAction`
+2. **Command** — runs the NPC's `actionCommand` as the player
+
+```kotlin
+// Set a command that runs when clicked
+npc?.setActionCommand("shop open")
+
+// Register a runtime action
+NPCManager.registerAction("spawn-guide") { player, npc ->
+    player.sendMessage("§aHello ${player.name}! I'm the spawn guide.")
+}
+```
+
+## Moving NPCs
+
+```kotlin
+npc?.teleport(newLocation)
+```
+
+## Persistence
+
+NPCs registered with `NPCManager` are saved to `npcs.yml`:
+
+```kotlin
+override fun onEnable() {
+    NPCManager.enable(this)
+}
+
+override fun onDisable() {
+    NPCManager.disable()
+}
+```
+
+## File Format
+
+The saved `npcs.yml` looks like:
+
+```yaml
+npcs:
+  spawn-guide:
+    world: world
+    x: 100.5
+    y: 65.0
+    z: -50.5
+    yaw: 90.0
+    pitch: 0.0
+    hologram-lines:
+      - "&b&lGuide"
+      - "&7Click me!"
+    action-command: "menu guide"
+    skin-type: NAME
+    skin-value: "Notch"
+```
+
+## Removing NPCs
+
+```kotlin
+// Despawn and remove from manager
+NPCManager.remove("spawn-guide")
+
+// Remove all NPCs
+NPCManager.removeAll()
+```
+
+## Permissions
+
+Players with the bypass permission can interact with NPCs even when
+they would normally be cancelled by other plugins.

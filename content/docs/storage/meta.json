@@ -1,0 +1,8 @@
+{
+  "pages": [
+    "flatfile",
+    "sql",
+    "mongodb",
+    "redis"
+  ]
+}

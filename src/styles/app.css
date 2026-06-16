@@ -1,5 +1,7 @@
 @import 'tailwindcss';
-@import 'fumadocs-ui/css/neutral.css';
+@import './unify-theme.css';
+@import './animations.css';
+@import './brand-colors.css';
 @import 'fumadocs-ui/css/preset.css';
 
 html {
@@ -9,4 +11,9 @@ html {
 html > body[data-scroll-locked] {
   margin-right: 0px !important;
   --removed-body-scroll-bar-size: 0px !important;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
 }

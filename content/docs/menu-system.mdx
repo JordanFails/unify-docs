@@ -1,0 +1,207 @@
+---
+icon: LayoutGrid
+title: Menu System
+description: Build paginated, bordered, interactive GUIs with buttons
+---
+
+Unify's menu framework supports multiple menu types, animated buttons,
+interactive slots, and pagination — all with minimal boilerplate.
+
+## Menu Types
+
+<Tabs items={['Menu', 'BorderedMenu', 'PaginatedMenu', 'InteractiveMenu', 'ConfirmMenu']}>
+  <Tab value="Menu">
+    The base class for all menus. You define buttons and a title.
+
+    ```kotlin
+    class ExampleMenu : Menu("&b&lExample Menu") {
+
+        override fun getButtons(player: Player): MutableMap<Int, Button> {
+            val buttons = mutableMapOf<Int, Button>()
+
+            buttons[13] = object : Button() {
+                override fun getName(player: Player) =
+                    CC.translate("&a&lClick Me!")
+
+                override fun getMaterial(player: Player) =
+                    Material.DIAMOND
+
+                override fun clicked(player: Player, slot: Int, clickType: ClickType, action: InventoryAction) {
+                    player.sendMessage("§aClicked!")
+                    player.closeInventory()
+                }
+            }
+
+            return buttons
+        }
+    }
+    ```
+
+    Open it:
+
+    ```kotlin
+    ExampleMenu().openMenu(player)
+    ```
+  </Tab>
+
+  <Tab value="BorderedMenu">
+    Menu with a glass-pane border around the edges. You define buttons
+    in the inner content area.
+
+    ```kotlin
+    class SettingsMenu : BorderedMenu("&8Settings") {
+
+        override fun getContentButtons(player: Player): MutableMap<Int, Button> {
+            val buttons = mutableMapOf<Int, Button>()
+
+            buttons[12] = object : Button() {
+                override fun getName(player: Player) = CC.translate("&aToggle")
+                override fun getMaterial(player: Player) = Material.LEVER
+                override fun clicked(player: Player, slot: Int, clickType: ClickType, action: InventoryAction) {
+                    player.sendMessage("§aToggled!")
+                }
+            }
+
+            return buttons
+        }
+    }
+    ```
+
+    The border is filled automatically with `GlassButton`.
+  </Tab>
+
+  <Tab value="PaginatedMenu">
+    Spread items across multiple pages with automatic navigation arrows.
+
+    ```kotlin
+    class ShopMenu : PaginatedMenu() {
+
+        private val items = listOf(Material.DIAMOND, Material.EMERALD, Material.IRON_INGOT)
+
+        override fun getPrePaginatedTitle(player: Player): String =
+            CC.translate("&6&lShop")
+
+        override fun getAllPagesButtons(player: Player): MutableMap<Int, Button> {
+            val buttons = mutableMapOf<Int, Button>()
+
+            for ((index, mat) in items.withIndex()) {
+                buttons[index] = object : Button() {
+                    override fun getName(player: Player) = CC.translate("&e${mat.name}")
+                    override fun getMaterial(player: Player) = mat
+                    override fun clicked(player: Player, slot: Int, clickType: ClickType, action: InventoryAction) {
+                        player.sendMessage("§eSelected ${mat.name}")
+                    }
+                }
+            }
+
+            return buttons
+        }
+    }
+    ```
+
+    Change navigation button style:
+
+    ```kotlin
+    pageButtonType = PageButtonType.HEAD    // Player heads
+    pageButtonType = PageButtonType.ARROW   // Arrows
+    pageButtonType = PageButtonType.CARPET  // Carpet blocks
+    ```
+  </Tab>
+
+  <Tab value="InteractiveMenu">
+    Let players place and take items from specific slots.
+
+    ```kotlin
+    class StorageMenu : InteractiveMenu("&8Storage") {
+
+        override fun getInteractiveSlots(): Set<Int> =
+            setOf(10, 11, 12, 13, 14, 15, 16)
+
+        override fun onSlotChange(
+            player: Player,
+            slot: Int,
+            oldItem: ItemStack?,
+            newItem: ItemStack?
+        ) {
+            storage.save(player.uniqueId, slot, newItem)
+        }
+
+        override fun getButtons(player: Player): MutableMap<Int, Button> {
+            val buttons = mutableMapOf<Int, Button>()
+            buttons[0] = BackButton(parentMenu)
+            buttons[8] = CloseButton()
+            return buttons
+        }
+    }
+    ```
+
+    | Slot Type | Behavior |
+    |-----------|----------|
+    | `getInteractiveSlots()` | Players can place AND take |
+    | `getInputOnlySlots()` | Players can only place (deposit) |
+    | `getOutputOnlySlots()` | Players can only take (withdraw) |
+  </Tab>
+
+  <Tab value="ConfirmMenu">
+    Built-in yes/no confirmation dialog.
+
+    ```kotlin
+    ConfirmMenu(
+        title = "&cConfirm Delete",
+        confirmText = "&aYes, delete",
+        cancelText = "&cCancel",
+        onConfirm = { player ->
+            deletePlayerData(player)
+            player.sendMessage("§aData deleted.")
+        },
+        onCancel = { player ->
+            player.sendMessage("§cCancelled.")
+        }
+    ).openMenu(player)
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Built-in Buttons
+
+| Button | Purpose |
+|--------|---------|
+| `BackButton(menu)` | Opens a previous menu |
+| `GlassButton()` | Decorative border filler |
+| `CloseButton()` | Closes the inventory |
+| `AnimatedButton` | Button with frame animation |
+| `InteractiveSlotButton` | Slot in InteractiveMenu |
+
+## Menu Properties
+
+```kotlin
+class MyMenu : Menu("Title") {
+
+    init {
+        autoUpdate = true          // Refresh buttons automatically
+        autoUpdateInterval = 500L  // Milliseconds between updates
+        updateAfterClick = true    // Refresh after any click
+        fillBackground = true      // Fill empty slots with glass
+        placeholder = true         // Use placeholder items
+        nonCancelling = false      // Cancel click events (default: true)
+        manualClose = true         // Allow manual closing
+    }
+}
+```
+
+## Menu Lifecycle
+
+| Phase | Method |
+|-------|--------|
+| **Open** | `menu.openMenu(player)` |
+| **Close** | `menu.onClose(player)` |
+| **Update** | `menu.updateButtons()` |
+| **Destroy** | `menu.closed = true` |
+
+## Next Steps
+
+- Combine menus with [Scheduling](/docs/scheduling) for animated updates
+- Use [Items](/docs/items) for complex button item stacks
+- Hook menus to [Commands](/docs/commands) for `/menu` commands

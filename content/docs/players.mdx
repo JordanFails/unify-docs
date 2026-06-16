@@ -1,0 +1,136 @@
+---
+icon: Users
+title: Players
+description: Sound, titles, action bars, resets, and player utilities
+---
+
+Unify's `PlayerUtils` handles the common player actions you need in
+almost every plugin.
+
+## Sounds
+
+```kotlin
+import me.jordanfails.unify.PlayerUtils
+import org.bukkit.Sound
+
+// Play a sound at normal volume/pitch
+PlayerUtils.playSound(player, Sound.ENTITY_PLAYER_LEVELUP)
+
+// Custom volume and pitch
+PlayerUtils.playSound(player, Sound.BLOCK_NOTE_BLOCK_PLING, 0.75F, 1.2F)
+
+// Play for all nearby players
+PlayerUtils.playSound(player.location, Sound.ENTITY_GENERIC_EXPLODE, 1.0F, 1.0F)
+```
+
+## Titles
+
+```kotlin
+// Simple title
+PlayerUtils.sendTitle(player, "&b&lWelcome!", "&7to the server")
+
+// Full control over timing (fadeIn, stay, fadeOut in ticks)
+PlayerUtils.sendTitle(
+    player,
+    "&c&lGame Over",
+    "&7Better luck next time",
+    10,  // fade in (0.5s)
+    60,  // stay (3s)
+    10   // fade out (0.5s)
+)
+```
+
+## Action Bars
+
+```kotlin
+// Send an action bar message
+PlayerUtils.sendActionBar(player, "&a⚡ Boost Active!")
+
+// Action bar with countdown
+repeat(10) { i ->
+    Tasks.runLater(plugin, (i * 20).toLong()) {
+        val seconds = 10 - i
+        PlayerUtils.sendActionBar(player, "&eCooldown: ${seconds}s")
+    }
+}
+```
+
+## Player Reset
+
+```kotlin
+// Full reset — clears inventory, health, food, effects
+PlayerUtils.resetPlayer(player)
+
+// Partial reset
+PlayerUtils.resetPlayer(
+    player,
+    inventory = true,
+    health = true,
+    food = true,
+    effects = true,
+    exp = false
+)
+```
+
+## Teleport with Effects
+
+```kotlin
+// Teleport with a sound and particles
+PlayerUtils.teleport(player, location)
+PlayerUtils.playSound(player, Sound.ENTITY_ENDERMAN_TELEPORT, 0.5F, 1.0F)
+```
+
+## Health & Food
+
+```kotlin
+// Heal completely
+player.health = 20.0
+player.foodLevel = 20
+player.saturation = 20.0F
+
+// Or use PlayerUtils helper
+PlayerUtils.heal(player)
+PlayerUtils.feed(player)
+```
+
+## Inventory Helpers
+
+```kotlin
+// Give item or drop on ground if full
+PlayerUtils.giveOrDrop(player, itemStack)
+
+// Check if inventory has space
+val hasSpace = PlayerUtils.hasSpace(player, itemStack)
+
+// Clear armor
+PlayerUtils.clearArmor(player)
+```
+
+## Experience
+
+```kotlin
+// Set total experience
+PlayerUtils.setTotalExp(player, 500)
+
+// Add levels
+PlayerUtils.addLevels(player, 5)
+
+// Get progress to next level
+val progress = PlayerUtils.getExpProgress(player)
+```
+
+## Hiding & Showing Players
+
+```kotlin
+// Hide player from another player
+PlayerUtils.hidePlayer(viewer, target)
+
+// Show player to another player
+PlayerUtils.showPlayer(viewer, target)
+
+// Hide player from everyone
+PlayerUtils.hideFromAll(player)
+
+// Show player to everyone
+PlayerUtils.showToAll(player)
+```

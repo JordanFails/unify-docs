@@ -1,0 +1,103 @@
+---
+icon: List
+title: Tab List
+description: Custom tab header and footer with provider-based updates
+---
+
+Unify's tab list system sends custom header and footer text to each
+player's tab list. It works the same way as the scoreboard and nametag
+systems — provider-based with automatic refresh.
+
+## How it Works
+
+1. Register **TabProviders** that define a header and footer.
+2. Providers are sorted by weight; highest-weight wins.
+3. Tab list refreshes automatically on a configurable interval.
+
+## Creating a Provider
+
+```kotlin
+import me.jordanfails.unify.tab.TabHandler
+import me.jordanfails.unify.tab.TabProvider
+import me.jordanfails.unify.tab.TabInfo
+
+class ServerTabProvider : TabProvider("Server", 50) {
+
+    override fun fetchTab(player: Player): TabInfo {
+        return createTab(
+            header = """
+                &b&lMineArcade
+                &7Welcome, &f${player.name}
+            """.trimIndent(),
+            footer = """
+                &7Online: &f${Bukkit.getOnlinePlayers().size}&7/&f${Bukkit.getMaxPlayers()}
+                &emc.minearcade.net
+            """.trimIndent()
+        )
+    }
+}
+```
+
+Register it:
+
+```kotlin
+TabHandler.registerProvider(ServerTabProvider())
+```
+
+## Built-in Provider
+
+```kotlin
+TabHandler.registerProvider(TabProvider.DefaultTabProvider())
+```
+
+The default provider reads from Unify's config:
+
+```yaml
+tab:
+  enabled: true
+  update-interval-ticks: 40
+  header:
+    - "&b&lWelcome"
+    - "&7Have fun!"
+  footer:
+    - "&7Online: &f{online}"
+    - "&eping: &f{ping}ms"
+```
+
+## TabInfo
+
+```kotlin
+val tab = TabProvider.createTab(
+    header = "&b&lMyServer",
+    footer = "&7mc.myserver.com"
+)
+```
+
+## Placeholders
+
+The built-in provider supports:
+
+| Placeholder | Description |
+|-------------|-------------|
+| `{player}` | Player name |
+| `{online}` | Online player count |
+| `{max_players}` | Server max players |
+| `{ping}` | Player ping (ms) |
+
+## Lifecycle
+
+```kotlin
+override fun onEnable() {
+    TabHandler.initialLoad()
+}
+```
+
+## Per-Player Updates
+
+```kotlin
+// Force refresh for one player
+TabHandler.sendTab(player)
+
+// Remove from tracking
+TabHandler.removePlayer(player)
+```

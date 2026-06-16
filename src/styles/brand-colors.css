@@ -1,0 +1,15 @@
+/* ── Sidebar dual-icon toggle for storage backend pages ──
+   Inactive = gray SVG  |  Active = brand-colored SVG
+   Both icons are rendered; CSS toggles visibility via [data-active].
+*/
+
+.fd-sidebar-icon-inactive { display: flex; }
+.fd-sidebar-icon-active   { display: none; }
+
+#nd-sidebar a[data-active="true"] .fd-sidebar-icon-inactive {
+  display: none !important;
+}
+
+#nd-sidebar a[data-active="true"] .fd-sidebar-icon-active {
+  display: flex !important;
+}

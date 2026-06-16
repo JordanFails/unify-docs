@@ -1,0 +1,105 @@
+---
+icon: Bookmark
+title: Nametags
+description: Per-player nametag prefixes and suffixes via scoreboard teams
+---
+
+Unify's nametag system sends per-player scoreboard team packets to show
+different prefixes and suffixes above player names. This works without
+modifying the actual player name or scoreboard teams.
+
+## How it Works
+
+Each player sees a custom nametag for every other player based on registered
+**NametagProviders**. Providers are sorted by weight — the highest-weight
+provider that returns a non-null nametag wins.
+
+## Creating a Provider
+
+```kotlin
+import me.jordanfails.unify.nametag.NametagHandler
+import me.jordanfails.unify.nametag.NametagProvider
+import me.jordanfails.unify.nametag.NametagInfo
+
+class RankNametagProvider : NametagProvider("Ranks", 10) {
+
+    override fun fetchNametag(
+        toRefresh: Player,
+        refreshFor: Player
+    ): NametagInfo {
+        val rank = rankManager.getRank(toRefresh)
+        return createNametag(
+            prefix = rank.color + "[" + rank.name + "] ",
+            suffix = ""
+        )
+    }
+}
+```
+
+Register it in `onEnable`:
+
+```kotlin
+NametagHandler.registerProvider(RankNametagProvider())
+```
+
+## Built-in Providers
+
+Unify ships with a default provider and an OP provider:
+
+```kotlin
+// Shows a configured prefix/suffix from Unify's config
+NametagHandler.registerProvider(NametagProvider.DefaultNametagProvider())
+
+// Shows [OP] or [OWNER] for operators
+NametagHandler.registerProvider(OpNametagProvider())
+```
+
+## Provider Weights
+
+Providers are evaluated highest-weight first. Use weights to layer providers:
+
+| Provider | Weight | Purpose |
+|----------|--------|---------|
+| Staff tags | 100 | Override everything for staff |
+| Rank tags | 50 | Normal player rank prefixes |
+| Default | 0 | Fallback when nothing else matches |
+
+## NametagInfo
+
+`NametagInfo` holds the prefix, suffix, and internal team name:
+
+```kotlin
+val info = NametagProvider.createNametag("&c[Admin] ", " &7✦")
+// Result: "[Admin] JordanFails ✦"
+```
+
+## Refreshing
+
+Nametags refresh automatically on an interval. You can also force a refresh:
+
+```kotlin
+// Refresh one player for everyone
+NametagHandler.refreshPlayer(player)
+
+// Refresh all nametags
+NametagHandler.reloadAll()
+```
+
+## Configuration
+
+In Unify's `config.yml`:
+
+```yaml
+nametag:
+  enabled: true
+  update-interval-ticks: 2
+  restrict:
+    enabled: false
+    bypass-permission: "unify.nametag.bypass"
+```
+
+## Restrict Mode
+
+When restrict mode is enabled, players only see custom nametags if they
+have the bypass permission. Useful for minigames or hub servers where you
+want clean names for most players.
