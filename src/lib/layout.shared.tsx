@@ -23,6 +23,11 @@ export function baseOptions(): BaseLayoutProps {
         url: '/status',
         active: 'url',
       },
+      {
+        text: 'Support',
+        url: '/support',
+        active: 'url',
+      },
     ],
     githubUrl: `https://github.com/${gitConfig.user}/${gitConfig.repo}`,
   };
