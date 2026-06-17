@@ -1,0 +1,382 @@
+---
+icon: Sparkles
+title: Your First Plugin
+description: A beginners guide to make your first plugin using Unify!
+---
+
+While this plugin is designed to be beginner friendly, lets go through a full
+plugin example!
+
+This walkthrough builds **ArcadeHub** — a hub plugin with a `/games` command
+that opens a menu, tracks player stats, and uses colors and sounds. By the end
+you'll have used commands, menus, storage, color translation, and player
+utilities together.
+
+
+---
+
+## 1. Project Structure
+
+Click any file to expand and see the code. Folders expand and collapse.
+
+<FileTree tree={[
+  {
+    name: "ArcadeHub",
+    type: "folder",
+    children: [
+      {
+        name: "build.gradle.kts",
+        type: "file",
+        note: "Build config",
+        code: `plugins {
+    kotlin("jvm") version "2.1.20"
+    id("com.gradleup.shadow") version "9.0.0-beta10"
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven("https://repo.papermc.io/repository/maven-public/")
+}
+
+dependencies {
+    compileOnly("org.jetbrains.kotlin:kotlin-stdlib")
+    compileOnly("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
+    compileOnly("me.jordanfails:unify-modern:1.0-SNAPSHOT")
+}
+
+tasks.shadowJar {
+    archiveFileName.set("ArcadeHub.jar")
+}`,
+      },
+      {
+        name: "src",
+        type: "folder",
+        children: [
+          {
+            name: "main",
+            type: "folder",
+            children: [
+              {
+                name: "kotlin",
+                type: "folder",
+                children: [
+                  {
+                    name: "me/jordanfails/arcadehub",
+                    type: "folder",
+                    children: [
+                      {
+                        name: "ArcadeHub.kt",
+                        type: "file",
+                        note: "Main plugin class",
+                        code: `package me.jordanfails.arcadehub
+
+import me.jordanfails.arcadehub.command.GamesCommand
+import me.jordanfails.arcadehub.data.PlayerStats
+import me.jordanfails.unify.Config
+import me.jordanfails.unify.Tasks
+import me.jordanfails.unify.acf.CommandHandler
+import co.aikar.commands.PaperCommandManager
+import me.jordanfails.honey.DataHandler
+import me.jordanfails.honey.DataStoreType
+import me.jordanfails.honey.connection.dataFramework
+import org.bukkit.plugin.java.JavaPlugin
+
+class ArcadeHub : JavaPlugin() {
+
+    lateinit var config: Config
+    lateinit var statsStore: me.jordanfails.honey.DataStore<String, PlayerStats>
+
+    override fun onEnable() {
+        // 1. Load config
+        config = Config(this, "config")
+
+        // 2. Set up Honey storage (flatfile for simplicity)
+        dataFramework { }
+        statsStore = DataHandler.createStoreType<String, PlayerStats>(DataStoreType.FLATFILE) {
+            it.id = "stats"
+        }
+
+        // 3. Register commands
+        val handler = CommandHandler(PaperCommandManager(this))
+        handler.registerCommands(GamesCommand(this))
+
+        logger.info("ArcadeHub enabled!")
+    }
+
+    override fun onDisable() {
+        DataHandler.closeAllConnections()
+        logger.info("ArcadeHub disabled.")
+    }
+}`,
+                      },
+                      {
+                        name: "command",
+                        type: "folder",
+                        children: [
+                          {
+                            name: "GamesCommand.kt",
+                            type: "file",
+                            note: "/games command",
+                            code: `package me.jordanfails.arcadehub.command
+
+import me.jordanfails.arcadehub.ArcadeHub
+import me.jordanfails.arcadehub.menu.GamesMenu
+import me.jordanfails.unify.CC
+import me.jordanfails.unify.PlayerUtils
+import co.aikar.commands.BaseCommand
+import co.aikar.commands.annotation.*
+import org.bukkit.Sound
+import org.bukkit.entity.Player
+
+@CommandAlias("games|g")
+@CommandPermission("arcadehub.games")
+class GamesCommand(private val plugin: ArcadeHub) : BaseCommand() {
+
+    @Default
+    @Description("Open the games menu")
+    fun onGames(player: Player) {
+        val uuid = player.uniqueId.toString()
+        val stats = plugin.statsStore.retrieve(uuid)
+            ?: PlayerStats(uuid, player.name)
+
+        PlayerUtils.playSound(player, Sound.BLOCK_NOTE_BLOCK_PLING, 0.75F, 1.5F)
+        GamesMenu(plugin, stats).openMenu(player)
+    }
+
+    @Subcommand("stats")
+    @Description("View your stats")
+    fun onStats(player: Player) {
+        val uuid = player.uniqueId.toString()
+        val stats = plugin.statsStore.retrieve(uuid)
+
+        if (stats == null) {
+            player.sendMessage(CC.translate("&cYou haven't played any games yet!"))
+            return
+        }
+
+        val winRate = if (stats.gamesPlayed > 0) {
+            "\${(stats.wins * 100 / stats.gamesPlayed)}%"
+        } else "0%"
+
+        PlayerUtils.sendTitle(
+            player,
+            "&b&lYour Stats",
+            "&7Games: &f\${stats.gamesPlayed} &7| Wins: &f\${stats.wins} &7| WR: &f$winRate",
+            10, 60, 10
+        )
+    }
+}`,
+                          },
+                        ],
+                      },
+                      {
+                        name: "menu",
+                        type: "folder",
+                        children: [
+                          {
+                            name: "GamesMenu.kt",
+                            type: "file",
+                            note: "The GUI",
+                            code: `package me.jordanfails.arcadehub.menu
+
+import me.jordanfails.arcadehub.ArcadeHub
+import me.jordanfails.arcadehub.data.PlayerStats
+import me.jordanfails.unify.Button
+import me.jordanfails.unify.CC
+import me.jordanfails.unify.ItemBuilder
+import me.jordanfails.unify.PlayerUtils
+import me.jordanfails.unify.menu.PaginatedBorderedMenu
+import org.bukkit.Material
+import org.bukkit.Sound
+import org.bukkit.entity.Player
+import org.bukkit.event.inventory.ClickType
+import org.bukkit.event.inventory.InventoryAction
+
+class GamesMenu(
+    private val plugin: ArcadeHub,
+    private val stats: PlayerStats
+) : PaginatedBorderedMenu() {
+
+    init {
+        autoUpdate = true
+        autoUpdateInterval = 500L
+    }
+
+    private val games = listOf(
+        Game("SkyWars", Material.DIAMOND_SWORD, "&b&lSkyWars", "&7Fight on floating islands"),
+        Game("BedWars", Material.RED_BED, "&c&lBedWars", "&7Protect your bed, destroy others"),
+        Game("Spleef", Material.IRON_SHOVEL, "&e&lSpleef", "&7Break the floor beneath your enemies"),
+        Game("Parkour", Material.LEATHER_BOOTS, "&a&lParkour", "&7Race to the finish"),
+    )
+
+    data class Game(val id: String, val material: Material, val name: String, val desc: String)
+
+    override fun getPrePaginatedTitle(player: Player): String =
+        CC.translate("&6&lArcade &8| &7Games")
+
+    override fun getAllPagesButtons(player: Player): MutableMap<Int, Button> {
+        val buttons = mutableMapOf<Int, Button>()
+        for ((index, game) in games.withIndex()) {
+            buttons[index] = object : Button() {
+                override fun getName(player: Player) = CC.translate(game.name)
+                override fun getDescription(player: Player): MutableList<String> {
+                    return mutableListOf(
+                        "", CC.translate(game.desc), "",
+                        CC.translate("&eClick to queue!")
+                    )
+                }
+                override fun getMaterial(player: Player) = game.material
+                override fun clicked(
+                    player: Player, slot: Int, clickType: ClickType, action: InventoryAction
+                ) {
+                    PlayerUtils.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.75F, 1.2F)
+                    stats.gamesPlayed++
+                    plugin.statsStore.store(stats.uuid, stats)
+                    player.closeInventory()
+                    player.sendMessage(CC.translate("&aQueued for \${game.id}!"))
+                }
+            }
+        }
+        return buttons
+    }
+
+    override fun getGlobalButtons(player: Player): MutableMap<Int, Button> {
+        val buttons = mutableMapOf<Int, Button>()
+        buttons[4] = object : Button() {
+            override fun getName(player: Player) = CC.translate("&b&lYour Stats")
+            override fun getMaterial(player: Player) = Material.BOOK
+            override fun getDescription(player: Player): MutableList<String> {
+                val winRate = if (stats.gamesPlayed > 0) {
+                    "\${(stats.wins * 100 / stats.gamesPlayed)}%"
+                } else "0%"
+                return mutableListOf(
+                    "", CC.translate("&7Games: &f\${stats.gamesPlayed}"),
+                    CC.translate("&7Wins: &f\${stats.wins}"),
+                    CC.translate("&7Win Rate: &f$winRate"),
+                    "", CC.translate("&eClick to view detailed stats")
+                )
+            }
+            override fun clicked(player: Player, slot: Int, clickType: ClickType, action: InventoryAction) {
+                PlayerUtils.playSound(player, Sound.ITEM_BOOK_PAGE_TURN, 0.75F, 1.0F)
+            }
+        }
+        return buttons
+    }
+}`,
+                          },
+                        ],
+                      },
+                      {
+                        name: "data",
+                        type: "folder",
+                        children: [
+                          {
+                            name: "PlayerStats.kt",
+                            type: "file",
+                            note: "Data class",
+                            code: `package me.jordanfails.arcadehub.data
+
+data class PlayerStats(
+    val uuid: String,
+    var name: String,
+    var gamesPlayed: Int = 0,
+    var wins: Int = 0,
+    var lastPlayed: Long = System.currentTimeMillis()
+)`,
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                name: "resources",
+                type: "folder",
+                children: [
+                  {
+                    name: "plugin.yml",
+                    type: "file",
+                    note: "Plugin manifest",
+                    code: `name: ArcadeHub
+version: 1.0.0
+main: you.unifyuser.arcadehub.ArcadeHub
+api-version: '1.21'
+dependencies:
+  - name: Unify`,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+]} />
+
+Honey handles serialization automatically with Gson. All you need to do is define it, write it, and retrieve it!
+
+---
+
+## 2. Build and Test
+
+```sh
+./gradlew shadowJar
+```
+
+Copy `build/libs/ArcadeHub.jar` to your dev server's `plugins/` folder
+(alongside `Unify.jar`), then start the server.
+
+In game, open the menu using `/game` and click a game to "queue" — it increments your `gamesPlayed` count and saves
+to flatfile. Rejoin the server and your stats persist.
+
+---
+
+## 3. What You Just Built
+
+| Feature | How It's Used |
+|---------|---------------|
+| **Commands** | `/games` and `/games stats` via ACF |
+| **Menu System** | `PaginatedBorderedMenu` with custom buttons |
+| **Storage** | Honey flatfile for persistent player stats |
+| **Color Translation** | `CC.translate()` on every string |
+| **Player Utils** | Sounds, titles, and action feedback |
+| **Item Builder** | Used internally by `Button` for item stacks |
+
+---
+
+## 4. Extend It
+
+Here are natural next steps to keep learning:
+
+**Add a win condition:**
+```kotlin
+// In your game logic
+stats.wins++
+plugin.statsStore.store(stats.uuid, stats)
+PlayerUtils.sendTitle(player, "&6&lVictory!", "&7You won the game!", 10, 60, 10)
+```
+
+**Add leaderboard holograms:**
+See [Holograms](/docs/holograms) to display top players at spawn.
+
+**Add scoreboard sidebar:**
+See [Scoreboard](/docs/scoreboard) to show live stats while playing.
+
+**Add per-game permissions:**
+See [Commands](/docs/commands) to gate games behind ranks.
+
+**Switch to SQL storage:**
+See [Storage](/docs/storage) — change `DataStoreType.FLATFILE` to `SQL`
+and add a SQLite path. The store API stays identical.
+
+---
+
+## Next Steps
+
+- [Commands](/docs/commands) — Subcommands, tab completion, context resolvers
+- [Menu System](/docs/menu-system) — Interactive menus, ConfirmMenu, animations
+- [Storage](/docs/storage) — SQL, MongoDB, Redis backends
+- [Players](/docs/players) — More sound, title, and action bar patterns

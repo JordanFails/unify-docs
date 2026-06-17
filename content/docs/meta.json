@@ -1,13 +1,8 @@
 {
   "pages": [
     "getting-started",
-    "---Features---",
-    "commands",
-    "config",
-    "items",
-    "menu-system",
-    "players",
-    "scheduling",
+    "server-setup",
+    "your-first-plugin",
     "---Systems---",
     "nametags",
     "holograms",
@@ -17,6 +12,7 @@
     "bossbar",
     "visibility",
     "storage",
-    "cross-version"
+    "cross-version",
+    "faq"
   ]
 }

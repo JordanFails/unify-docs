@@ -3,7 +3,15 @@ import { HomeLayout } from 'fumadocs-ui/layouts/home';
 import { baseOptions } from '@/lib/layout.shared';
 import { Card, Cards } from 'fumadocs-ui/components/card';
 import { CodeBlock } from '@/components/code-block';
-import { PaletteIcon, BoxIcon, LayersIcon, FileCodeIcon, ClockIcon, TerminalIcon } from 'lucide-react';
+import {
+  PaletteIcon,
+  BoxIcon,
+  LayersIcon,
+  FileCodeIcon,
+  ClockIcon,
+  TerminalIcon,
+  ArrowRightIcon,
+} from 'lucide-react';
 
 export const Route = createFileRoute('/')({
   component: Home,
@@ -12,44 +20,36 @@ export const Route = createFileRoute('/')({
 function Home() {
   return (
     <HomeLayout {...baseOptions()}>
-      <main className="flex flex-1 flex-col">
+      <main className="flex flex-1 flex-col overflow-hidden">
         {/* Hero */}
-        <section className="relative flex flex-col items-center justify-center overflow-hidden px-6 py-28 text-center md:py-36">
-          {/* Subtle background grid */}
+        <section className="relative border-b px-6 py-24 text-center md:py-32">
           <div
-            className="pointer-events-none absolute inset-0 opacity-[0.03]"
-            style={{
-              backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)',
-              backgroundSize: '24px 24px',
-            }}
+            aria-hidden
+            className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,var(--color-fd-primary)/0.08,transparent_60%)]"
           />
-          <div className="relative z-10">
-            <div className="animate-hero inline-flex items-center gap-2 rounded-full border bg-fd-secondary px-4 py-1.5 text-xs font-medium text-fd-muted-foreground mb-8">
-              🚀 Kotlin library for Paper & Spigot
+          <div className="mx-auto max-w-3xl">
+            <div className="animate-hero mb-6 inline-flex items-center gap-2 rounded-full border bg-fd-card px-3 py-1 text-xs font-medium text-fd-muted-foreground">
+              Kotlin library for Paper & Spigot
             </div>
-            <h1 className="animate-hero delay-100 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl max-w-4xl">
-              Build Minecraft plugins{' '}
-              <span className="bg-gradient-to-r from-fd-primary to-blue-400 bg-clip-text text-transparent">
-                faster
-              </span>
-              , with less boilerplate
+            <h1 className="animate-hero delay-100 text-4xl font-bold tracking-tight sm:text-5xl">
+              Build Minecraft plugins with{' '}
+              <span className="text-fd-primary">Unify</span>
             </h1>
-            <p className="animate-hero delay-200 mt-6 max-w-2xl text-lg text-fd-muted-foreground leading-relaxed">
-              Unify provides cross-version NMS handling, a powerful menu system,
-              color translation, fluid item builders, and scheduling shortcuts —
-              so you can focus on gameplay, not infrastructure.
+            <p className="animate-hero delay-200 mx-auto mt-5 max-w-2xl text-lg text-fd-muted-foreground leading-relaxed">
+              Cross-version NMS handling, menus, color translation, item builders,
+              and scheduling — bundled so you can focus on gameplay.
             </p>
-            <div className="animate-hero delay-300 mt-10 flex flex-wrap items-center justify-center gap-3">
+            <div className="animate-hero delay-300 mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link
                 to="/docs/getting-started"
-                className="hover-glow inline-flex items-center gap-2 rounded-xl bg-fd-primary px-6 py-3 text-sm font-semibold text-fd-primary-foreground shadow-lg shadow-fd-primary/20 transition-all hover:brightness-110"
+                className="inline-flex items-center gap-2 rounded-lg bg-fd-primary px-5 py-2.5 text-sm font-medium text-fd-primary-foreground transition-opacity hover:opacity-90"
               >
                 Get Started
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                <ArrowRightIcon className="size-4" />
               </Link>
               <Link
                 to="/docs/core-features"
-                className="hover-lift inline-flex items-center gap-2 rounded-xl border bg-fd-card px-6 py-3 text-sm font-medium text-fd-foreground transition-all hover:bg-fd-accent"
+                className="inline-flex items-center gap-2 rounded-lg border bg-fd-card px-5 py-2.5 text-sm font-medium text-fd-foreground transition-colors hover:bg-fd-accent"
               >
                 Browse Features
               </Link>
@@ -57,85 +57,66 @@ function Home() {
           </div>
         </section>
 
-        {/* Features Grid */}
-        <section className="mx-auto w-full max-w-5xl px-6 pb-28">
-          <div className="mb-14 text-center">
-            <span className="animate-fade-in-up inline-block text-xs font-medium uppercase tracking-widest text-fd-primary">
-              Features
-            </span>
-            <h2 className="animate-fade-in-up delay-100 mt-3 text-2xl font-bold">Everything you need, bundled</h2>
-            <p className="animate-fade-in-up delay-200 mt-2 text-fd-muted-foreground">
-              Unify ships with the utilities you reach for in every plugin.
+        {/* Features */}
+        <section className="mx-auto w-full max-w-5xl px-6 py-20">
+          <div className="mb-10 text-center">
+            <h2 className="text-2xl font-semibold tracking-tight">Everything you need, bundled</h2>
+            <p className="mt-2 text-fd-muted-foreground">
+              Utilities you reach for in every plugin, ready out of the box.
             </p>
           </div>
 
           <Cards>
-            <div className="animate-fade-in-up delay-100">
-              <Card
-                icon={<PaletteIcon className="h-4 w-4" />}
-                title="Color Translation"
-                description="Legacy &-codes, hex, gradients, and MiniMessage — all through one CC.translate() call."
-                href="/docs/core-features#cc--color-translation"
-              />
-            </div>
-            <div className="animate-fade-in-up delay-200">
-              <Card
-                icon={<BoxIcon className="h-4 w-4" />}
-                title="Item Builder"
-                description="Chainable ItemStack creation with name, lore, enchants, glow, and unbreakable — no boilerplate."
-                href="/docs/core-features#itembuilder--fluid-itemstack-creation"
-              />
-            </div>
-            <div className="animate-fade-in-up delay-300">
-              <Card
-                icon={<LayersIcon className="h-4 w-4" />}
-                title="Menu System"
-                description="Paginated, bordered GUIs with buttons, back navigation, and placeholders. Build shops, settings, and more."
-                href="/docs/menu-system"
-              />
-            </div>
-            <div className="animate-fade-in-up delay-400">
-              <Card
-                icon={<FileCodeIcon className="h-4 w-4" />}
-                title="Config Wrapper"
-                description="Type-safe YAML wrapper with an enum-based pattern for Voyage-style configuration."
-                href="/docs/core-features#config--yaml-wrapper"
-              />
-            </div>
-            <div className="animate-fade-in-up delay-500">
-              <Card
-                icon={<ClockIcon className="h-4 w-4" />}
-                title="Scheduling"
-                description="Tasks.run(), Tasks.runAsync(), Tasks.runTimer() — Bukkit scheduler without the ceremony."
-                href="/docs/core-features#tasks--scheduling-shortcuts"
-              />
-            </div>
-            <div className="animate-fade-in-up delay-600">
-              <Card
-                icon={<TerminalIcon className="h-4 w-4" />}
-                title="ACF Commands"
-                description="Aikar Command Framework wrapper with automatic tab-completion, permissions, and context resolvers."
-                href="/docs/core-features#acf-commands"
-              />
-            </div>
+            <Card
+              icon={<PaletteIcon className="size-4" />}
+              title="Color Translation"
+              description="Legacy &-codes, hex, gradients, and MiniMessage through CC.translate()."
+              href="/docs/core-features#cc--color-translation"
+            />
+            <Card
+              icon={<BoxIcon className="size-4" />}
+              title="Item Builder"
+              description="Chainable ItemStack creation with name, lore, enchants, and glow."
+              href="/docs/core-features#itembuilder--fluid-itemstack-creation"
+            />
+            <Card
+              icon={<LayersIcon className="size-4" />}
+              title="Menu System"
+              description="Paginated, bordered GUIs with buttons, back navigation, and placeholders."
+              href="/docs/menu-system"
+            />
+            <Card
+              icon={<FileCodeIcon className="size-4" />}
+              title="Config Wrapper"
+              description="Type-safe YAML wrapper with an enum-based configuration pattern."
+              href="/docs/core-features#config--yaml-wrapper"
+            />
+            <Card
+              icon={<ClockIcon className="size-4" />}
+              title="Scheduling"
+              description="Tasks.run(), Tasks.runAsync(), Tasks.runTimer() without the ceremony."
+              href="/docs/core-features#tasks--scheduling-shortcuts"
+            />
+            <Card
+              icon={<TerminalIcon className="size-4" />}
+              title="ACF Commands"
+              description="Command framework wrapper with tab-completion, permissions, and resolvers."
+              href="/docs/core-features#acf-commands"
+            />
           </Cards>
         </section>
 
         {/* Code Preview */}
-        <section className="border-t bg-fd-card/50 px-6 py-24">
+        <section className="border-t bg-fd-card/40 px-6 py-20">
           <div className="mx-auto max-w-5xl">
-            <div className="mb-14 text-center">
-              <span className="animate-fade-in-up inline-block text-xs font-medium uppercase tracking-widest text-fd-primary">
-                Example
-              </span>
-              <h2 className="animate-fade-in-up delay-100 mt-3 text-2xl font-bold">See it in action</h2>
-              <p className="animate-fade-in-up delay-200 mt-2 text-fd-muted-foreground">
-                A complete menu + command in under 40 lines.
+            <div className="mb-10 text-center">
+              <h2 className="text-2xl font-semibold tracking-tight">See it in action</h2>
+              <p className="mt-2 text-fd-muted-foreground">
+                A complete menu and command in under 40 lines.
               </p>
             </div>
 
-            <div className="animate-scale-in delay-300">
-              <CodeBlock code={`@CommandAlias("shop")
+            <CodeBlock code={`@CommandAlias("shop")
 @CommandPermission("myplugin.shop")
 class ShopCommand : BaseCommand() {
 
@@ -162,34 +143,23 @@ class ShopMenu : PaginatedBorderedMenu() {
         return buttons
     }
 }`} />
-            </div>
           </div>
         </section>
 
         {/* CTA */}
-        <section className="flex flex-col items-center gap-5 px-6 py-24 text-center">
-          <h2 className="animate-fade-in-up text-2xl font-bold">Ready to build?</h2>
-          <p className="animate-fade-in-up delay-100 max-w-md text-fd-muted-foreground leading-relaxed">
-            Head over to the getting started guide to add Unify to your project
-            and write your first plugin.
+        <section className="flex flex-col items-center gap-4 border-t px-6 py-20 text-center">
+          <h2 className="text-2xl font-semibold tracking-tight">Ready to build?</h2>
+          <p className="max-w-md text-fd-muted-foreground">
+            Add Unify to your project and write your first plugin in minutes.
           </p>
           <Link
             to="/docs/getting-started"
-            className="animate-scale-in delay-200 hover-glow inline-flex items-center gap-2 rounded-xl bg-fd-primary px-6 py-3 text-sm font-semibold text-fd-primary-foreground shadow-lg shadow-fd-primary/20 transition-all hover:brightness-110"
+            className="inline-flex items-center gap-2 rounded-lg bg-fd-primary px-5 py-2.5 text-sm font-medium text-fd-primary-foreground transition-opacity hover:opacity-90"
           >
             Get Started
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            <ArrowRightIcon className="size-4" />
           </Link>
         </section>
-
-        {/* Footer */}
-        <footer className="border-t px-6 py-8 text-center text-sm text-fd-muted-foreground">
-          <p>Unify is open source on{' '}
-            <a href="https://github.com/JordanFails/Unify" className="hover-underline underline underline-offset-2 hover:text-fd-foreground" target="_blank" rel="noreferrer">
-              GitHub
-            </a>.
-          </p>
-        </footer>
       </main>
     </HomeLayout>
   );

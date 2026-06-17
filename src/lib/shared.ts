@@ -1,4 +1,4 @@
-export const appName = 'Unify Docs';
+export const appName = 'Unify';
 export const docsRoute = '/docs';
 export const docsImageRoute = '/og/docs';
 

@@ -1,35 +1,48 @@
 import { createRootRoute, HeadContent, Outlet, Scripts } from '@tanstack/react-router';
-import * as React from 'react';
 import appCss from '@/styles/app.css?url';
 import { RootProvider } from 'fumadocs-ui/provider/tanstack';
+import { Banner } from 'fumadocs-ui/components/banner';
 
 export const Route = createRootRoute({
   head: () => ({
     meta: [
+      { charSet: 'utf-8' },
+      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      { title: 'Unify Docs' },
       {
-        charSet: 'utf-8',
+        name: 'description',
+        content:
+          'Documentation for Unify — a Kotlin library for Paper & Spigot plugins with cross-version NMS, menus, and utilities.',
       },
+      { property: 'og:title', content: 'Unify Docs' },
       {
-        name: 'viewport',
-        content: 'width=device-width, initial-scale=1',
+        property: 'og:description',
+        content: 'Build Minecraft plugins faster with Unify.',
       },
-      {
-        title: 'Unify Docs',
-      },
+      { property: 'og:type', content: 'website' },
+      { name: 'twitter:card', content: 'summary' },
     ],
-    links: [{ rel: 'stylesheet', href: appCss }],
+    links: [
+      { rel: 'stylesheet', href: appCss },
+      { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
+    ],
   }),
   component: RootComponent,
 });
 
 function RootComponent() {
   return (
-    <html suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
-      <body className="flex flex-col min-h-screen">
+      <body className="flex min-h-screen flex-col">
         <RootProvider>
+          <Banner id="unify-wip" height="2rem">
+            <span className="text-fd-muted-foreground">
+              Documentation is a work in progress — some pages may be incomplete.
+            </span>
+          </Banner>
           <Outlet />
         </RootProvider>
         <Scripts />

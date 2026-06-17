@@ -15,54 +15,68 @@ table. It supports SQLite (local file), MySQL, and PostgreSQL.
 - When multiple plugins share a database
 - Most common choice for Minecraft plugins
 
-## SQLite (Local File)
+## Setup
 
-```kotlin
-import me.jordanfails.honey.DataHandler
-import me.jordanfails.honey.DataStoreType
-import me.jordanfails.honey.connection.dataFramework
+<Tabs items={['SQLite', 'MySQL', 'PostgreSQL']}>
+  <Tab value="SQLite">
+    ```kotlin
+    import me.jordanfails.honey.DataHandler
+    import me.jordanfails.honey.DataStoreType
+    import me.jordanfails.honey.connection.dataFramework
 
-// Local SQLite database
-dataFramework {
-    sqlite(path = "./data/honey.db")
-}
+    // Local file — no server needed
+    dataFramework {
+        sqlite(path = "./data/honey.db")
+    }
 
-val store = DataHandler.createStoreType<String, PlayerData>(DataStoreType.SQL) {
-    it.id = "players"  // logical namespace
-}
-```
+    val store = DataHandler.createStoreType<String, PlayerData>(DataStoreType.SQL) {
+        it.id = "players"
+    }
+    ```
+  </Tab>
+  <Tab value="MySQL">
+    ```kotlin
+    import me.jordanfails.honey.DataHandler
+    import me.jordanfails.honey.DataStoreType
+    import me.jordanfails.honey.connection.dataFramework
 
-## MySQL
+    dataFramework {
+        mysql(
+            host = "localhost",
+            port = 3306,
+            database = "myplugin",
+            username = "root",
+            password = "secret"
+        )
+    }
 
-```kotlin
-dataFramework {
-    mysql(
-        host = "localhost",
-        port = 3306,
-        database = "myplugin",
-        username = "root",
-        password = "secret"
-    )
-}
+    val store = DataHandler.createStoreType<String, PlayerData>(DataStoreType.SQL) {
+        it.id = "players"
+    }
+    ```
+  </Tab>
+  <Tab value="PostgreSQL">
+    ```kotlin
+    import me.jordanfails.honey.DataHandler
+    import me.jordanfails.honey.DataStoreType
+    import me.jordanfails.honey.connection.dataFramework
 
-val store = DataHandler.createStoreType<String, PlayerData>(DataStoreType.SQL) {
-    it.id = "players"
-}
-```
+    dataFramework {
+        postgres(
+            host = "localhost",
+            port = 5432,
+            database = "myplugin",
+            username = "postgres",
+            password = "secret"
+        )
+    }
 
-## PostgreSQL
-
-```kotlin
-dataFramework {
-    postgres(
-        host = "localhost",
-        port = 5432,
-        database = "myplugin",
-        username = "postgres",
-        password = "secret"
-    )
-}
-```
+    val store = DataHandler.createStoreType<String, PlayerData>(DataStoreType.SQL) {
+        it.id = "players"
+    }
+    ```
+  </Tab>
+</Tabs>
 
 ## Full Example
 

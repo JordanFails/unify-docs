@@ -3,10 +3,14 @@ import type { MDXComponents } from 'mdx/types';
 import { Tab, Tabs, TabsContent, TabsList, TabsTrigger } from 'fumadocs-ui/components/tabs';
 import { Step, Steps } from 'fumadocs-ui/components/steps';
 import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+import * as Icons from 'lucide-react';
+import { FileTree } from './file-tree';
 
 export function getMDXComponents(components?: MDXComponents) {
   return {
     ...defaultMdxComponents,
+    ...Icons,
+    FileTree,
     Tabs, Tab, TabsContent, TabsList, TabsTrigger,
     Steps, Step,
     Accordions, Accordion,

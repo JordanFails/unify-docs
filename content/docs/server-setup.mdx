@@ -1,0 +1,203 @@
+---
+icon: Server
+title: Server Setup
+description: Set up a local Paper server for plugin development and testing
+---
+
+You need a running Paper server to test your plugin. This guide walks through
+creating a local development environment from scratch.
+
+## Download Paper
+
+Paper is a fork of Spigot with better performance and a richer API. Unify is
+built for Paper (and its forks like Purpur and Pufferfish).
+
+1. Go to [papermc.io/downloads](https://papermc.io/downloads)
+2. Download the latest build for your target version
+3. Create a folder for your server (e.g., `~/mc-dev-server`)
+4. Move the downloaded `.jar` into that folder and rename it to `paper.jar`
+
+## First Launch
+
+Create a startup script in your server folder:
+
+<Tabs items={['Windows (batch)', 'Windows (PowerShell)', 'macOS / Linux']}>
+  <Tab value="Windows (batch)">
+    ```bat title="start.bat"
+    @echo off
+    java -Xms1G -Xmx2G -jar paper.jar nogui
+    pause
+    ```
+  </Tab>
+  <Tab value="Windows (PowerShell)">
+    ```powershell title="start.ps1"
+    java -Xms1G -Xmx2G -jar paper.jar nogui
+    ```
+  </Tab>
+  <Tab value="macOS / Linux">
+    ```sh title="start.sh"
+    #!/bin/bash
+    java -Xms1G -Xmx2G -jar paper.jar nogui
+    ```
+    Make it executable: `chmod +x start.sh`
+  </Tab>
+</Tabs>
+
+Run the script. The first launch will:
+- Generate `eula.txt` — open it and set `eula=true`
+- Create the world and config files
+- Exit after EULA acceptance
+
+Run it again. You should see the server start and the console prompt appear.
+
+## Install Unify
+
+1. Build Unify locally (see [Getting Started](/docs/getting-started))
+2. Copy `Unify.jar` from `Unify/build/libs/` into your server's `plugins/` folder
+3. Restart the server
+
+Verify it loaded:
+
+```
+[Server thread/INFO]: [Unify] Enabling Unify v1.0-SNAPSHOT
+```
+
+## Plugin Development Workflow
+
+The fastest way to iterate is to build your plugin in IntelliJ and copy the jar
+to the server. Here's a smooth workflow:
+
+### 1. IntelliJ Run Configuration
+
+Create a shell script that builds and copies your plugin:
+
+```sh title="deploy.sh"
+#!/bin/bash
+SERVER_DIR="$HOME/mc-dev-server"
+PLUGIN_NAME="MyPlugin"
+
+# Build
+./gradlew shadowJar
+
+# Copy to server
+cp "build/libs/${PLUGIN_NAME}.jar" "$SERVER_DIR/plugins/"
+
+echo "Deployed to $SERVER_DIR/plugins/"
+```
+
+In IntelliJ, go to **Run → Edit Configurations → + → Shell Script** and point it
+at `deploy.sh`.
+
+### 2. Hot Reload with PlugManX
+
+Instead of restarting the server every time, use
+[PlugManX](https://www.spigotmc.org/resources/plugmanx.88135/) to reload your
+plugin in-place:
+
+```
+/plugman reload MyPlugin
+```
+
+Or from your plugin's deploy script:
+
+```sh
+# After copying the jar, reload via RCON or server console
+screen -S mc -p 0 -X stuff "plugman reload MyPlugin\n"
+```
+
+> ⚠️ PlugManX is for development only. Always do full restarts in production.
+
+### 3. Gradle Task (Recommended)
+
+Add a deploy task to `build.gradle.kts`:
+
+```kotlin title="build.gradle.kts"
+tasks.register<Copy>("deploy") {
+    dependsOn("shadowJar")
+    from(layout.buildDirectory.file("libs/MyPlugin.jar"))
+    into(file(System.getenv("MC_SERVER_DIR") ?: "../mc-dev-server/plugins"))
+    doLast {
+        println("Deployed to server plugins/")
+    }
+}
+```
+
+Set `MC_SERVER_DIR` in your environment, then run:
+
+```sh
+./gradlew deploy
+```
+
+## Server File Layout
+
+Your dev server should look like this:
+
+```
+mc-dev-server/
+├── paper.jar
+├── start.sh
+├── eula.txt
+├── server.properties
+├── plugins/
+│   ├── Unify.jar          ← Unify library
+│   ├── MyPlugin.jar       ← Your plugin (copied on build)
+│   └── PlugManX.jar       ← Optional: hot reload
+├── world/
+├── world_nether/
+└── world_the_end/
+```
+
+## Useful `server.properties` Settings
+
+```properties
+# Dev-friendly settings
+online-mode=false          # Allow offline-mode testing
+gamemode=creative
+force-gamemode=true
+motd=\u00A7bDev Server
+max-players=10
+spawn-protection=0
+allow-flight=true
+```
+
+## Joining Your Server
+
+From the Minecraft client:
+1. Add server → `localhost` (or `127.0.0.1`)
+2. If `online-mode=false`, you can join with any username
+
+Use a second Minecraft instance (different launcher profile) to test
+multiplayer features like visibility, nametags, and scoreboards.
+
+## IntelliJ Debugger (Advanced)
+
+You can attach IntelliJ's debugger to a running Paper server for breakpoints
+and variable inspection:
+
+1. Start the server with JDWP enabled:
+
+```sh
+java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 \
+     -Xms1G -Xmx2G -jar paper.jar nogui
+```
+
+2. In IntelliJ: **Run → Attach to Process** → select the Paper JVM
+
+Or create a **Remote JVM Debug** run configuration with host `localhost` and
+port `5005`.
+
+## Common Issues
+
+| Issue | Cause | Fix |
+|-------|-------|-----|
+| `UnsupportedClassVersionError` | Java version mismatch | Use Java 21 for modern, Java 8 for legacy |
+| `NoClassDefFoundError: me.jordanfails.unify.*` | Unify.jar not in plugins/ | Copy Unify.jar alongside your plugin |
+| Plugin loads but commands don't work | ACF not registered | Call `CommandHandler.registerCommands()` in `onEnable` |
+| Menu opens but items are missing | Button methods return null | Check `getName()` and `getMaterial()` aren't returning null |
+| Changes not showing after reload | Old jar cached | Stop server, delete old jar, start fresh |
+
+## Next Steps
+
+- [Your First Plugin](/docs/your-first-plugin) — Build a complete plugin from scratch
+- [Getting Started](/docs/getting-started) — Add Unify to an existing project
+- [Core Features](/docs/core-features) — Quick overview of all utilities

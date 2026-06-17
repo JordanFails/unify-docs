@@ -106,21 +106,46 @@ val areEqual = ItemBuilder.isEqual(item1, item2)
 
 ## Quick Item Templates
 
-```kotlin
-// Common filler item
-val filler = ItemBuilder(Material.GRAY_STAINED_GLASS_PANE)
-    .name(" ")
-    .build()
+Click through to see each template:
 
-// Close button
-val close = ItemBuilder(Material.BARRIER)
-    .name("&c&lClose")
-    .lore("&7Click to close")
-    .build()
-
-// Info item
-val info = ItemBuilder(Material.BOOK)
-    .name("&e&lInformation")
-    .glow(true)
-    .build()
-```
+<Tabs items={['Filler', 'Close Button', 'Info Item', 'Skull', 'Menu Border']}>
+  <Tab value="Filler">
+    ```kotlin
+    val filler = ItemBuilder(Material.GRAY_STAINED_GLASS_PANE)
+        .name(" ")
+        .build()
+    ```
+  </Tab>
+  <Tab value="Close Button">
+    ```kotlin
+    val close = ItemBuilder(Material.BARRIER)
+        .name("&c&lClose")
+        .lore("&7Click to close")
+        .build()
+    ```
+  </Tab>
+  <Tab value="Info Item">
+    ```kotlin
+    val info = ItemBuilder(Material.BOOK)
+        .name("&e&lInformation")
+        .glow(true)
+        .build()
+    ```
+  </Tab>
+  <Tab value="Skull">
+    ```kotlin
+    val skull = ItemBuilder(Material.PLAYER_HEAD)
+        .name("&b&lPlayer Head")
+        .skullOwner("JordanFails")
+        .lore("&7Click to view profile")
+        .build()
+    ```
+  </Tab>
+  <Tab value="Menu Border">
+    ```kotlin
+    val border = ItemBuilder(Material.BLACK_STAINED_GLASS_PANE)
+        .name(" ")
+        .build()
+    ```
+  </Tab>
+</Tabs>

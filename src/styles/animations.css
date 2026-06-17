@@ -1,13 +1,12 @@
 /* ============================================================
    Unify Docs — Animations
-   Subtle, polished motion that gives life without distraction
+   Subtle motion for marketing pages; docs use Fumadocs defaults
    ============================================================ */
 
-/* ── Scroll Reveal ── */
 @keyframes fade-in-up {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
@@ -15,26 +14,10 @@
   }
 }
 
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slide-in-left {
-  from {
-    opacity: 0;
-    transform: translateX(-16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
 @keyframes scale-in {
   from {
     opacity: 0;
-    transform: scale(0.96);
+    transform: scale(0.97);
   }
   to {
     opacity: 1;
@@ -42,64 +25,19 @@
   }
 }
 
-/* ── Hero Entrance ── */
 @keyframes hero-fade-in {
   from {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(24px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
-
-@keyframes hero-blur-in {
-  from {
-    opacity: 0;
-    filter: blur(12px);
-  }
-  to {
-    opacity: 1;
-    filter: blur(0);
-  }
-}
-
-/* ── Decorative ── */
-@keyframes pulse-soft {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.7; }
-}
-
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-/* ── Page Transition ── */
-@keyframes page-enter {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* ── Utility Classes ── */
 
 .animate-fade-in-up {
-  animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.animate-fade-in {
-  animation: fade-in 0.5s ease-out forwards;
-}
-
-.animate-slide-in-left {
-  animation: slide-in-left 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-scale-in {
@@ -107,39 +45,17 @@
 }
 
 .animate-hero {
-  animation: hero-fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: hero-fade-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.animate-hero-blur {
-  animation: hero-blur-in 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.animate-page-enter {
-  animation: page-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-/* Stagger delays */
 .delay-100 { animation-delay: 100ms; }
 .delay-200 { animation-delay: 200ms; }
 .delay-300 { animation-delay: 300ms; }
 .delay-400 { animation-delay: 400ms; }
 .delay-500 { animation-delay: 500ms; }
 .delay-600 { animation-delay: 600ms; }
-.delay-700 { animation-delay: 700ms; }
-.delay-800 { animation-delay: 800ms; }
 
-/* Start hidden, animate in */
-.animate-on-scroll {
-  opacity: 0;
-}
-
-.animate-on-scroll.is-visible {
-  opacity: 1;
-}
-
-/* ── Hover Effects ── */
-
-/* Card lift */
+/* ── Hover Effects (home page only) ── */
 .hover-lift {
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
               box-shadow 0.2s ease;
@@ -149,7 +65,6 @@
   transform: translateY(-2px);
 }
 
-/* Link underline slide */
 .hover-underline {
   position: relative;
 }
@@ -169,86 +84,10 @@
   width: 100%;
 }
 
-/* Button glow pulse */
 .hover-glow {
   transition: box-shadow 0.3s ease, transform 0.2s ease;
 }
 
 .hover-glow:hover {
   box-shadow: 0 0 20px -4px var(--color-fd-primary);
-}
-
-/* Icon shift on hover */
-.hover-icon-shift {
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.group:hover .hover-icon-shift,
-.hover-icon-shift-parent:hover .hover-icon-shift {
-  transform: translateX(3px);
-}
-
-/* ── Sidebar Stagger ── */
-#nd-sidebar a,
-#nd-sidebar p {
-  opacity: 0;
-  animation: slide-in-left 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-/* Stagger sidebar items */
-#nd-sidebar a:nth-child(1) { animation-delay: 30ms; }
-#nd-sidebar a:nth-child(2) { animation-delay: 60ms; }
-#nd-sidebar a:nth-child(3) { animation-delay: 90ms; }
-#nd-sidebar a:nth-child(4) { animation-delay: 120ms; }
-#nd-sidebar a:nth-child(5) { animation-delay: 150ms; }
-#nd-sidebar a:nth-child(6) { animation-delay: 180ms; }
-#nd-sidebar a:nth-child(7) { animation-delay: 210ms; }
-#nd-sidebar a:nth-child(8) { animation-delay: 240ms; }
-#nd-sidebar a:nth-child(9) { animation-delay: 270ms; }
-#nd-sidebar a:nth-child(10) { animation-delay: 300ms; }
-#nd-sidebar a:nth-child(11) { animation-delay: 330ms; }
-#nd-sidebar a:nth-child(12) { animation-delay: 360ms; }
-#nd-sidebar a:nth-child(13) { animation-delay: 390ms; }
-#nd-sidebar a:nth-child(14) { animation-delay: 420ms; }
-#nd-sidebar a:nth-child(15) { animation-delay: 450ms; }
-#nd-sidebar a:nth-child(16) { animation-delay: 480ms; }
-#nd-sidebar a:nth-child(17) { animation-delay: 510ms; }
-#nd-sidebar a:nth-child(18) { animation-delay: 540ms; }
-#nd-sidebar a:nth-child(19) { animation-delay: 570ms; }
-#nd-sidebar a:nth-child(20) { animation-delay: 600ms; }
-
-/* ── Smooth Theme Transitions ──
-   Only apply to our own interactive elements, not Fumadocs internals */
-a, button, .hover-lift, .hover-glow, .hover-underline,
-[data-radix-scroll-area-viewport] a,
-.fd-card, .fd-button, .fd-link {
-  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
-}
-
-/* ── Code Block Entrance ── */
-pre {
-  animation: scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-/* ── Table Row Hover ── */
-table tbody tr {
-  transition: background-color 0.15s ease;
-}
-
-/* ── Tab Switch ── */
-[data-state="active"] {
-  transition: color 0.2s ease, border-color 0.2s ease;
-}
-
-/* ── Accordion ── */
-[data-state="open"] {
-  transition: transform 0.2s ease;
-}
-
-/* ── Focus Ring Animation ── */
-:focus-visible {
-  transition: outline-offset 0.15s ease, outline-color 0.15s ease;
-  outline-offset: 2px;
 }

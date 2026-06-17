@@ -1,0 +1,376 @@
+---
+icon: CircleQuestionMark
+title: FAQ
+description: Common questions and troubleshooting for Unify
+---
+
+## Installation & Setup
+
+### I get `ClassNotFoundException: me.jordanfails.unify.*` on startup
+
+Unify must be installed as a plugin in your server's `plugins/` folder.
+It is **not** shaded into your plugin jar — it runs as a separate plugin
+that your plugin depends on.
+
+**Fix:** Copy `Unify.jar` (from `Unify/build/libs/`) into the server's
+`plugins/` folder alongside your plugin jar.
+
+### Do I shade Unify into my plugin?
+
+No. Unify is a runtime dependency, not a compile-time library to bundle.
+Your `build.gradle.kts` should use `compileOnly`:
+
+```kotlin
+dependencies {
+    compileOnly("me.jordanfails:unify-modern:1.0-SNAPSHOT")
+}
+```
+
+The `compileOnly` scope means your plugin compiles against Unify's API but
+doesn't include it in the output jar. At runtime, the server loads Unify
+first, then your plugin.
+
+### Which version do I need — legacy or modern?
+
+| Server Version | Unify Variant | Java |
+|---------------|---------------|------|
+| 1.8 – 1.16 | `unify-legacy` | 8+ |
+| 1.17+ | `unify-modern` | 21+ |
+
+Both share the same API. You only change the dependency coordinate.
+
+### Can I support both legacy and modern in one plugin?
+
+No. Pick one variant based on your minimum supported server version.
+If you need to support 1.8 through 1.21, use `unify-legacy` with Java 8.
+XSupport handles cross-version material resolution regardless of which
+Unify variant you use.
+
+---
+
+## Thread Safety
+
+### `IllegalStateException: Asynchronous entity add!`
+
+You called a Bukkit API method from an async thread. Common culprits:
+- Spawning entities inside `Tasks.runAsync()`
+- Modifying blocks inside `Tasks.runAsync()`
+- Sending packets to players from async
+
+**Fix:** Move Bukkit API calls back to the main thread:
+
+```kotlin
+Tasks.runAsync(plugin) {
+    val result = databaseQuery()  // async is fine here
+
+    Tasks.run(plugin) {          // jump back to main thread
+        player.sendMessage(result)
+        player.location.world.spawnEntity(player.location, EntityType.ZOMBIE)
+    }
+}
+```
+
+### Which Tasks methods run on which thread?
+
+| Method | Thread | Safe For |
+|--------|--------|----------|
+| `Tasks.run` | Main | Bukkit API, world changes, entities |
+| `Tasks.runLater` | Main | Delayed Bukkit operations |
+| `Tasks.runTimer` | Main | Repeating game logic |
+| `Tasks.runAsync` | Background | Database, HTTP, file I/O |
+| `Tasks.runAsyncLater` | Background | Delayed I/O |
+| `Tasks.runAsyncTimer` | Background | Repeating background work |
+
+**Rule:** If it touches the world, entities, inventories, or players —
+use the main thread.
+
+---
+
+## Menus
+
+### My menu opens but items don't appear
+
+Check that `getName()` and `getMaterial()` return non-null values. If either
+returns null, the button won't render.
+
+```kotlin
+override fun getName(player: Player): String {
+    return CC.translate("&aClick Me!")  // ✅ non-null
+}
+
+override fun getMaterial(player: Player): Material {
+    return Material.DIAMOND              // ✅ non-null
+}
+```
+
+### Players can take items out of my menu
+
+You need to cancel the click event. In `Button.clicked()`, call:
+
+```kotlin
+override fun clicked(player: Player, slot: Int, clickType: ClickType, action: InventoryAction) {
+    // Your logic here
+    // Click is automatically cancelled by the menu framework
+}
+```
+
+If you're using `InteractiveMenu`, slots in `getInteractiveSlots()` are
+designed to allow item placement. Remove those slots if you don't want
+players moving items.
+
+### `NullPointerException` in `getAllPagesButtons`
+
+The `items.withIndex()` pattern requires an `items` list. Make sure you
+declare it:
+
+```kotlin
+class ShopMenu : PaginatedBorderedMenu() {
+    private val items = listOf(Material.DIAMOND, Material.EMERALD)  // ← don't forget this
+
+    override fun getAllPagesButtons(player: Player): MutableMap<Int, Button> {
+        val buttons = mutableMapOf<Int, Button>()
+        for ((index, mat) in items.withIndex()) {
+            // ...
+        }
+        return buttons
+    }
+}
+```
+
+---
+
+## Commands
+
+### My command doesn't register
+
+Three things to check:
+
+1. **Did you call `registerCommands()` in `onEnable`?**
+   ```kotlin
+   override fun onEnable() {
+       val handler = CommandHandler(PaperCommandManager(this))
+       handler.registerCommands(MyCommand())  // ← this line
+   }
+   ```
+
+2. **Does the command class extend `BaseCommand`?**
+   ```kotlin
+   class MyCommand : BaseCommand() { ... }  // ← must extend BaseCommand
+   ```
+
+3. **Is the method annotated with `@Default` or `@Subcommand`?**
+   ```kotlin
+   @Default  // ← required
+   fun onCommand(sender: CommandSender) { ... }
+   ```
+
+### Tab completion isn't working
+
+Use `@CommandCompletion` with ACF's built-in resolvers:
+
+```kotlin
+@CommandCompletion("@players")
+fun onTeleport(sender: Player, @Name("target") target: Player) { }
+```
+
+For custom completions, register them with the command manager:
+
+```kotlin
+commandManager.commandCompletions.registerAsyncCompletion("kits") { c ->
+    kitManager.getKitNames()
+}
+```
+
+---
+
+## Storage (Honey)
+
+### `DataStore.retrieve()` returns null for existing data
+
+Check that the store ID and key match what you used when saving:
+
+```kotlin
+// Saving
+val store = DataHandler.createStoreType<String, PlayerData>(DataStoreType.FLATFILE) {
+    it.id = "players"  // ← this ID
+}
+store.store(player.uuid, data)
+
+// Loading
+val loaded = store.retrieve(player.uuid)  // ← same key
+```
+
+If you changed the store ID between server restarts, the old data won't
+be found. Store IDs must be stable.
+
+### How do I migrate from flatfile to SQL?
+
+Change one line:
+
+```kotlin
+// Before
+val store = DataHandler.createStoreType<String, PlayerData>(DataStoreType.FLATFILE) { ... }
+
+// After
+DataHandler.closeAllConnections()  // close flatfile first
+
+dataFramework {
+    sqlite(path = "./data/honey.db")
+}
+
+val store = DataHandler.createStoreType<String, PlayerData>(DataStoreType.SQL) { ... }
+```
+
+The store API is identical. For data migration, iterate flatfile keys and
+re-store them in SQL:
+
+```kotlin
+// One-time migration
+val flatfile = DataHandler.createStoreType<String, PlayerData>(DataStoreType.FLATFILE) { it.id = "players" }
+val sql = DataHandler.createStoreType<String, PlayerData>(DataStoreType.SQL) { it.id = "players" }
+
+for (key in flatfile.keys()) {
+    flatfile.retrieve(key)?.let { sql.store(key, it) }
+}
+```
+
+---
+
+## Colors & Items
+
+### `CC.translate()` shows raw `&` characters
+
+`CC.translate()` replaces `&` color codes. If you see raw `&aHello` in chat,
+you forgot to call it:
+
+```kotlin
+// ❌ Wrong
+player.sendMessage("&aHello")           // shows: &aHello
+
+// ✅ Correct
+player.sendMessage(CC.translate("&aHello"))  // shows: Hello (in green)
+```
+
+### Hex colors don't work on 1.8
+
+Hex color support (`&#rrggbb`) requires Minecraft 1.16+. On older versions,
+Unify falls back to the nearest legacy color. Use `XSupport.getMajorVersion()`
+to check before using hex:
+
+```kotlin
+val message = if (XSupport.getMajorVersion() >= 16) {
+    CC.translate("&#ff0000Red Text")
+} else {
+    CC.translate("&cRed Text")
+}
+```
+
+### `ItemBuilder` items lose enchantment glow on relog
+
+The `glow(true)` method adds a hidden enchantment for the visual effect.
+If it disappears, the item might be getting deserialized without the hidden
+flag. Use `hideFlags(true)` alongside `glow(true)`:
+
+```kotlin
+ItemBuilder(Material.DIAMOND_SWORD)
+    .name("&b&lSword")
+    .glow(true)
+    .hideFlags(true)  // ← hides the enchantment tooltip
+    .build()
+```
+
+---
+
+## Cross-Version
+
+### `XMaterial.NETHERITE_INGOT` throws on 1.12
+
+Netherite was added in 1.16. On older versions, `XSupport.resolve()` returns
+null. Always check availability:
+
+```kotlin
+val material = if (XSupport.isAvailable(XMaterial.NETHERITE_INGOT)) {
+    XSupport.resolve(XMaterial.NETHERITE_INGOT)
+} else {
+    Material.DIAMOND  // fallback
+}
+```
+
+### My plugin crashes on 1.8 with `NoSuchMethodError`
+
+You're calling a Paper/Spigot API method that doesn't exist in 1.8. Common
+culprits:
+- `Player#getLocale()` — added in 1.12
+- `World#createEntity()` — added in 1.13
+- `BlockData` API — added in 1.13
+
+Use `XSupport.getMajorVersion()` to guard version-specific code:
+
+```kotlin
+if (XSupport.getMajorVersion() >= 13) {
+    // use BlockData API
+} else {
+    // use MaterialData API (legacy)
+}
+```
+
+---
+
+## Performance
+
+### My menu with `autoUpdate = true` causes lag
+
+`autoUpdate` refreshes all buttons on a timer. If you have many players
+with menus open, this adds up. Options:
+
+1. **Increase the interval:**
+   ```kotlin
+   autoUpdateInterval = 2000L  // update every 2 seconds instead of 500ms
+   ```
+
+2. **Use manual updates:**
+   ```kotlin
+   autoUpdate = false
+   // Call menu.updateButtons() only when data changes
+   ```
+
+3. **Only update changed buttons:**
+   ```kotlin
+   // Instead of full refresh, update specific slots
+   menu.getButton(slot)?.update(player)
+   ```
+
+### Scoreboard/Nametag updates cause frame drops
+
+The default update interval is aggressive (2 ticks for nametags, 20 for
+scoreboards). Increase it in Unify's config:
+
+```yaml
+nametag:
+  update-interval-ticks: 10  # was 2
+
+scoreboard:
+  update-interval-ticks: 40  # was 20
+```
+
+### Honey flatfile is slow with 1000+ entries
+
+Flatfile stores each entry as a separate JSON file. At scale, this becomes
+I/O bound. Switch to SQL:
+
+```kotlin
+dataFramework {
+    sqlite(path = "./data/honey.db")
+}
+val store = DataHandler.createStoreType<String, PlayerData>(DataStoreType.SQL) { ... }
+```
+
+The rule of thumb: flatfile for < 500 entries, SQL for everything else.
+
+---
+
+## Still Stuck?
+
+- Check the [Server Setup](/docs/server-setup) guide for dev environment issues
+- Read [Your First Plugin](/docs/your-first-plugin) for a working end-to-end example
+- Browse [Core Features](/docs/core-features) for API overviews
