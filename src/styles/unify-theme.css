@@ -13,8 +13,22 @@
 }
 
 .dark {
+  --color-fd-background: hsl(0 0% 0%);
+  --color-fd-foreground: hsl(0 0% 100%);
+  --color-fd-muted: hsla(0 0% 100% / 0.06);
+  --color-fd-muted-foreground: hsla(0 0% 100% / 0.62);
+  --color-fd-popover: hsl(0 0% 0%);
+  --color-fd-popover-foreground: hsl(0 0% 100%);
+  --color-fd-card: hsla(0 0% 100% / 0.035);
+  --color-fd-card-foreground: hsl(0 0% 100%);
+  --color-fd-border: hsla(0 0% 100% / 0.12);
+  --color-fd-secondary: hsla(0 0% 100% / 0.06);
+  --color-fd-secondary-foreground: hsl(0 0% 100%);
+  --color-fd-accent: hsla(0 0% 100% / 0.06);
+  --color-fd-accent-foreground: hsl(0 0% 100%);
+  --color-fd-ring: hsla(0 0% 100% / 0.35);
+
   --color-fd-primary: #5b94f5;
   --color-fd-primary-foreground: hsl(220, 30%, 6%);
-  --color-fd-ring: #5b94f5;
   --color-fd-secondary-foreground: hsl(218, 20%, 85%);
 }

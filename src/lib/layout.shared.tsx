@@ -1,5 +1,6 @@
 import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
 import { appName, docsRoute, gitConfig } from './shared';
+import { PillThemeSwitch } from '@/components/pill-theme-switch';
 
 export function baseOptions(): BaseLayoutProps {
   return {
@@ -30,5 +31,12 @@ export function baseOptions(): BaseLayoutProps {
       },
     ],
     githubUrl: `https://github.com/${gitConfig.user}/${gitConfig.repo}`,
+    themeSwitch: {
+      enabled: true,
+      mode: 'light-dark',
+    },
+    slots: {
+      themeSwitch: PillThemeSwitch,
+    },
   };
 }

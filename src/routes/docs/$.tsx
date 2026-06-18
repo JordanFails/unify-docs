@@ -20,6 +20,7 @@ import { AISearch, AISearchPanel, AISearchTrigger } from '@/components/ai/search
 import { MessageCircleIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { buttonVariants } from 'fumadocs-ui/components/ui/button';
+import { DocsNavbar } from '@/components/docs-navbar';
 
 export const Route = createFileRoute('/docs/$')({
   component: Page,
@@ -81,7 +82,7 @@ function Page() {
   const { path, pageTree, markdownUrl } = useFumadocsLoader(Route.useLoaderData());
 
   return (
-    <DocsLayout {...baseOptions()} tree={pageTree}>
+    <DocsLayout {...baseOptions()} tree={pageTree} slots={{ header: DocsNavbar }}>
       <AISearch>
         <AISearchPanel />
         <AISearchTrigger

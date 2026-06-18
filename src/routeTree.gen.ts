@@ -13,6 +13,7 @@ import { Route as SupportRouteImport } from './routes/support'
 import { Route as StatusRouteImport } from './routes/status'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as LlmsFullDottxtRouteImport } from './routes/llms-full[.]txt'
+import { Route as DifferentstylesRouteImport } from './routes/differentstyles'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DocsChar123Char125DotmdRouteImport } from './routes/docs/{$}[.]md'
 import { Route as DocsSplatRouteImport } from './routes/docs/$'
@@ -38,6 +39,11 @@ const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
 const LlmsFullDottxtRoute = LlmsFullDottxtRouteImport.update({
   id: '/llms-full.txt',
   path: '/llms-full.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DifferentstylesRoute = DifferentstylesRouteImport.update({
+  id: '/differentstyles',
+  path: '/differentstyles',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -73,6 +79,7 @@ const ApiChatRoute = ApiChatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/differentstyles': typeof DifferentstylesRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/status': typeof StatusRoute
@@ -85,6 +92,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/differentstyles': typeof DifferentstylesRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/status': typeof StatusRoute
@@ -98,6 +106,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/differentstyles': typeof DifferentstylesRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/status': typeof StatusRoute
@@ -112,6 +121,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/differentstyles'
     | '/llms-full.txt'
     | '/llms.txt'
     | '/status'
@@ -124,6 +134,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/differentstyles'
     | '/llms-full.txt'
     | '/llms.txt'
     | '/status'
@@ -136,6 +147,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/differentstyles'
     | '/llms-full.txt'
     | '/llms.txt'
     | '/status'
@@ -149,6 +161,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DifferentstylesRoute: typeof DifferentstylesRoute
   LlmsFullDottxtRoute: typeof LlmsFullDottxtRoute
   LlmsDottxtRoute: typeof LlmsDottxtRoute
   StatusRoute: typeof StatusRoute
@@ -188,6 +201,13 @@ declare module '@tanstack/react-router' {
       path: '/llms-full.txt'
       fullPath: '/llms-full.txt'
       preLoaderRoute: typeof LlmsFullDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/differentstyles': {
+      id: '/differentstyles'
+      path: '/differentstyles'
+      fullPath: '/differentstyles'
+      preLoaderRoute: typeof DifferentstylesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -237,6 +257,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DifferentstylesRoute: DifferentstylesRoute,
   LlmsFullDottxtRoute: LlmsFullDottxtRoute,
   LlmsDottxtRoute: LlmsDottxtRoute,
   StatusRoute: StatusRoute,

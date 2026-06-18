@@ -37,9 +37,9 @@ function RootComponent() {
         <HeadContent />
       </head>
       <body className="flex min-h-screen flex-col">
-        <RootProvider>
-          <Banner id="unify-wip" height="2rem">
-            <span className="text-fd-muted-foreground">
+        <RootProvider search={{ options: { api: '/api/search' } }}>
+          <Banner id="unify-wip" height="2rem" className="bg-fd-background/80 text-fd-foreground border-b border-fd-border">
+            <span className="text-fd-foreground/70">
               Documentation is a work in progress — some pages may be incomplete.
             </span>
           </Banner>

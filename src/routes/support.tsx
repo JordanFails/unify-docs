@@ -2,7 +2,8 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { HomeLayout } from 'fumadocs-ui/layouts/home';
 import { baseOptions } from '@/lib/layout.shared';
 import { calLink } from '@/lib/shared';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+import Cal, { getCalApi } from '@calcom/embed-react';
 import {
   CalendarIcon,
   ClockIcon,
@@ -25,111 +26,27 @@ export const Route = createFileRoute('/support')({
   component: SupportPage,
 });
 
-interface CalApi {
-  (command: 'init', options: Record<string, unknown>): void;
-  (command: 'inline', options: Record<string, unknown>): void;
-  q?: unknown[];
-  loaded?: boolean;
-  ns?: Record<string, CalApi>;
-}
-
-declare global {
-  interface Window {
-    Cal?: CalApi;
-  }
-}
-
 function SupportPage() {
-  const embedRef = useRef<HTMLDivElement>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const container = embedRef.current;
-    if (!container) return;
-
-    // Observe the container so we can hide the spinner once Cal renders its iframe.
-    const observer = new MutationObserver((mutations) => {
-      const hasIframe = mutations.some((m) =>
-        Array.from(m.addedNodes).some(
-          (n) => n.nodeName === 'IFRAME' || (n instanceof Element && n.querySelector('iframe')),
-        ),
-      );
-      if (hasIframe) {
-        setLoading(false);
-        observer.disconnect();
-      }
-    });
-    observer.observe(container, { childList: true, subtree: true });
-
-    const scriptId = 'cal-inline-snippet';
-    if (document.getElementById(scriptId)) {
-      // Snippet already injected (e.g. hot reload); clear and (re)render inline.
-      container.innerHTML = '';
-      if (window.Cal) {
-        window.Cal('init', { origin: 'https://cal.com' });
-        window.Cal('inline', {
-          elementOrSelector: '#cal-inline-container',
-          calLink,
+    let mounted = true;
+    getCalApi()
+      .then((cal) => {
+        if (!mounted) return;
+        cal('ui', {
+          theme: 'auto',
+          hideEventTypeDetails: false,
           layout: 'month_view',
         });
-      }
-      return () => observer.disconnect();
-    }
-
-    const script = document.createElement('script');
-    script.id = scriptId;
-    script.type = 'text/javascript';
-    script.innerHTML = `
-      (function (C, A, L) {
-        let p = function (a, ar) { a.q.push(ar); };
-        let d = C.document;
-        C.Cal = C.Cal || function () {
-          let cal = C.Cal;
-          let ar = arguments;
-          if (!cal.loaded) {
-            cal.ns = {};
-            cal.q = cal.q || [];
-            d.head.appendChild(d.createElement("script")).src = A;
-            cal.loaded = true;
-          }
-          if (ar[0] === L) {
-            const api = function () { p(api, arguments); };
-            const namespace = ar[1];
-            api.q = api.q || [];
-            if (typeof namespace === "string") { cal.ns[namespace] = api; }
-            else { cal.q.push(ar); }
-            return api;
-          } else {
-            p(cal, ar);
-          }
-        };
-      })(window, "https://app.cal.com/embed/embed.js", "init");
-      Cal("init", { origin: "https://cal.com" });
-      Cal("inline", {
-        elementOrSelector: "#cal-inline-container",
-        calLink: "${calLink}",
-        layout: "month_view"
+        setReady(true);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setReady(true);
       });
-    `;
-
-    script.onerror = () => {
-      setError('Failed to load the Cal.com booking widget.');
-      setLoading(false);
-      observer.disconnect();
-    };
-
-    // Fallback: hide spinner after a generous timeout even if the iframe isn't detected.
-    const timeout = setTimeout(() => {
-      setLoading(false);
-      observer.disconnect();
-    }, 4000);
-
-    document.head.appendChild(script);
-
     return () => {
-      clearTimeout(timeout);
-      observer.disconnect();
+      mounted = false;
     };
   }, []);
 
@@ -171,7 +88,7 @@ function SupportPage() {
         </div>
 
         {/* Booking widget */}
-        <div className="overflow-hidden rounded-2xl border bg-fd-card">
+        <div className="overflow-hidden rounded-2xl border bg-fd-card shadow-sm">
           <div className="border-b px-6 py-4">
             <h2 className="font-semibold">Select a time</h2>
             <p className="text-sm text-fd-muted-foreground">
@@ -179,8 +96,8 @@ function SupportPage() {
             </p>
           </div>
 
-          <div className="relative min-h-[700px] p-1">
-            {loading && (
+          <div className="relative min-h-[700px]">
+            {!ready && (
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-fd-card">
                 <Loader2Icon className="size-6 animate-spin text-fd-muted-foreground" />
                 <p className="text-sm text-fd-muted-foreground">
@@ -189,25 +106,10 @@ function SupportPage() {
               </div>
             )}
 
-            {error && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-fd-card px-6 text-center">
-                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-                <a
-                  href={`https://cal.com/${calLink}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-fd-primary hover:underline"
-                >
-                  Open Cal.com directly
-                </a>
-              </div>
-            )}
-
-            <div
-              ref={embedRef}
-              id="cal-inline-container"
-              className="min-h-[700px] w-full"
-              aria-label="Booking calendar"
+            <Cal
+              calLink={calLink}
+              style={{ width: '100%', minHeight: '700px' }}
+              config={{ layout: 'month_view' }}
             />
           </div>
         </div>
